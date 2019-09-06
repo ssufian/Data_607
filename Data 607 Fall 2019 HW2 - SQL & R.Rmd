@@ -1,0 +1,68 @@
+---
+title: "Data 607 HW2 SQL & R"
+author: "Sufian"
+date: "9/6/2019"
+output: html_document
+---
+
+Instructions for Prof to run this code:
+
+- Create a MYSQL Database called "projet-final"
+
+- Run Hw2_v1 SQL script
+
+- Run R Script
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F)
+```
+
+## Assignment 2 - SQL & R 
+
+Creating database in SQL and importing into R and displaying the results in R
+
+```{r, echo=F }
+library(RMySQL)
+library(DBI)
+library(rstudioapi)
+
+# connecting to projet-final database in MYSQL
+
+# This line do not ask for user and password
+con <- dbConnect(MySQL(), user ="root", password = "Chicke0n", port = 3306, dbname = "projet-final",host = "localhost")
+
+# This line ask for user name and password
+#con <- dbConnect(MySQL(), user = showPrompt('Username',"Username",default="root"), password = askForPassword(), port = 3306, dbname = "projet-final",host = "localhost")
+
+#query my reviews & videos tables from projet-final database
+
+ret1 <- dbGetQuery(con,"select * FROM Videos")
+
+ret2 <- dbGetQuery(con,"select * FROM Reviewer")
+
+#do a join between the two tables
+
+ret3 <- merge(ret1, ret2,by="id")
+
+# show the tables
+ret1
+ret2
+
+ret3
+
+
+```
+
+First table - The movie table
+
+2nd table - Reviewer table
+
+3rd table - Joined table (movies with its associated reviews)
+
+links to RPubs:
+http://rpubs.com/ssufian/525717
+
+link to Github:
+
+
+

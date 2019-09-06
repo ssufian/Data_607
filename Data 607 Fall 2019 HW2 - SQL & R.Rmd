@@ -63,6 +63,6 @@ links to RPubs:
 http://rpubs.com/ssufian/525717
 
 link to Github:
-
+https://github.com/ssufian/Data_607_HW2_SQL_R
 
 

@@ -22,9 +22,14 @@ knitr::opts_chunk$set(echo = F)
 Creating database in SQL and importing into R and displaying the results in R
 
 ```{r, echo=F }
+library("DT")
+library(dplyr)
+library(plotrix)
+library(data.table)
 library(RMySQL)
 library(DBI)
 library(rstudioapi)
+require (ggplot2)
 
 # connecting to projet-final database in MYSQL
 
@@ -32,7 +37,7 @@ library(rstudioapi)
 con <- dbConnect(MySQL(), user ="root", password = "Chicke0n", port = 3306, dbname = "projet-final",host = "localhost")
 
 # This line ask for user name and password
-#con <- dbConnect(MySQL(), user = showPrompt('Username',"Username",default="root"), password = askForPassword(), port = 3306, dbname = "projet-final",host = "localhost")
+#con <- dbConnect(MySQL(), user = showPrompt('Username',"Username",default="root"), password = #askForPassword(), port = 3306, dbname = "projet-final",host = "localhost")
 
 #query my reviews & videos tables from projet-final database
 
@@ -40,29 +45,82 @@ ret1 <- dbGetQuery(con,"select * FROM Videos")
 
 ret2 <- dbGetQuery(con,"select * FROM Reviewer")
 
-#do a join between the two tables
-
-ret3 <- merge(ret1, ret2,by="id")
 
 # show the tables
-ret1
+#movies table
+datatable ( ret1 )
+
+#reviewer table
+datatable ( ret2 )
+
+# check data structure of ret2
+str(ret2)
+
+# Converting NA to integer zero, to account for NULL Values in SQL Database
+ret2[is.na(ret2)] <- 0
+
 ret2
 
-ret3
+#bar plot of Total raw ratings
+ggplot(data=ret2, aes(x=Name_of_Reviewer, y=Rating)) + geom_bar(stat="identity" )+
+    geom_bar(colour="black", fill="#DD8888", width=.8, stat="identity" ) + 
+    guides(fill=FALSE) +
+    xlab("Participants") + ylab("Raw Ratings") +
+    ggtitle("Sum of All Raw Ratings per 6 participants")
+
+# Adding mean rating for each movie in the datatable
+
+setDT(ret2)[, Mean_Rating := round(mean(Rating),digits = 1), by = Movie_Name]
+datatable ( ret2)
+
+# Get Unique Rows for Each movie with Rating and selecting only Movie_Name and Mean rating
+dt_uniqe <- ret2[!duplicated(ret2[,'Movie_Name']),c(2,7)]
+datatable ( dt_uniqe  )
+
+
+#bar plot of Mean ratings of all Movies
+ggplot(data=dt_uniqe, aes(x=Movie_Name, y=Mean_Rating)) + geom_bar(stat="identity")+
+    geom_bar(colour="black", fill="#DD8888", width=.8, stat="identity") + 
+    guides(fill=FALSE) +
+    xlab("Movies") + ylab("Mean Ratings") +
+    ggtitle("Mean Ratings by Movies")
+
+
+#Creating Dataframe with all the movies and their mean rating and movie types
+df <- merge(dt_uniqe, ret1, by="Movie_Name")
+df
 
 
 ```
+Summary Results:
 
 First table - The movie table
 
-2nd table - Reviewer table
+2nd table - Reviewer table with original NA 
 
-3rd table - Joined table (movies with its associated reviews)
+3rd table - Reviewer table with NA replaced by zero
+
+Observation #1
+
+Estimating the participation rate (how actively they were involved) by sum of raw ratings:
+
+(a) Participants Steffi & Tom gave the most ratings; Adding up all their ratings per movie. This means these 2 participants was actively involved in the survey by providing scores 
+
+(b) Participant Apu was on the other extreme end followed closely by Jeff;  these 2 participants either did not watch the movies or did was not actively participating in the survey at all
+
+Observation #2
+
+Estimating which movies scored best or worst via their average rating scores:
+
+(a) The movies "something about Mary", "The International" and "Wonder woman" scored the highest respectively
+
+(b) The movies "Lion King" was the worst rated followed by distance second "The souvenir"
+
 
 links to RPubs:
 http://rpubs.com/ssufian/525717
 
 link to Github:
-https://github.com/ssufian/Data_607_HW2_SQL_R
 
+https://github.com/ssufian/Data_607_HW2_SQL_R
 

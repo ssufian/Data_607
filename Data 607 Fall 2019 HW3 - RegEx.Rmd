@@ -37,7 +37,7 @@ raw.data
 
 The names extracted from the original is shown below:
 
-```{r, echo=FALSE}
+```{r}
 name <- unlist(str_extract_all(raw.data, "[[:alpha:]., ]{2,}"))
 
 name

@@ -1,7 +1,10 @@
----
+
 title: "Data 607 - Project 1"
+
 author: "Sufian"
+
 date: "9/18/2019"
+
 output: html_document
 
 Rpubs Links:
@@ -10,8 +13,8 @@ http://www.rpubs.com/ssufian/530973
 
 GitHub Links:
   
+https://github.com/ssufian/Data_607
 
----
 
 ```{r setup, include=FALSE}
 
@@ -322,7 +325,6 @@ ggplot(df_new, aes(df$'State',df$`Post Rating`)) +geom_boxplot()
 #Creating a data table 
 datatable(df_new, rownames=FALSE)
 
-head(datatable)
 ```
 
 ```{r}

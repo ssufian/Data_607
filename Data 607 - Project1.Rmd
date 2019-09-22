@@ -298,8 +298,26 @@ Conclusion:
     pre tournament rankings).  This is visually discerning by the Red regression line which is almost
     
     almost flat as evidenced by slope = 0.128.
+```{r}
+#histogram to confirm that first scatter plot (chart 1) was misleading
 
+hist(df_new$`Avg Pre Rating`, main="Avg Opponents Pre Tournament Ratings", xlab="opponents' Avg pre rating")
 
+hist(df_new$`Pre Rating`, main="Players' Own Pre Tournament Ratings", xlab="Players' Pre rating")
+
+hist(df_new$`Post Rating`, main="Players' Own Post Tournament Ratings", xlab="Players' Post rating")
+```
+
+## Observations from Basic Histograms:
+
+(1)  First 2 histograms of opponnents avg pre-tournament rankings vs. the players' own ranking showed
+
+     a normal distribution of  their opponents' average ranking of around 1350.  However, the players' 
+     
+     own pre-tournament rankings was left-skewed with a higher ratings of around 1500.  These addtional 
+     
+     charts showed the likely hood of player mis-matches in terms of skill sets
+     
 ```{r}
 ggplot(df_new, aes(df$'State',df$`Pre Rating`)) +geom_boxplot()
 
@@ -331,4 +349,5 @@ datatable(df_new, rownames=FALSE)
 #Writing to CSV file
 write.table(df_new,file="Sufian_Suwarman_Project1.csv",row.names=FALSE,col.names=TRUE,sep=",")
 ```
+
 

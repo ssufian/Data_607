@@ -1,0 +1,332 @@
+---
+title: "Data 607 - Project 1"
+author: "Sufian"
+date: "9/18/2019"
+output: html_document
+
+Rpubs Links:
+  
+http://www.rpubs.com/ssufian/530973
+
+GitHub Links:
+  
+
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+In this project, the task is to transform a text file with chess tournament results into a clean tidy data
+
+format and store the results as a .CSV file with the following information for all of the players:
+
+Player’s Name
+
+Player’s State
+
+Total Number of Points
+
+Player’s Pre-Rating
+
+Average Pre Chess Rating of Opponents
+
+## Load the Tournament Data
+
+
+```{r}
+# Load necessary libraries
+library(stringr)
+library(DT)
+library(tidyr)
+library(dplyr)
+
+
+url <- 'https://raw.githubusercontent.com/ssufian/Data_607/master/tournamentinfo.txt'
+mydata <- read.table(file =url, header=F , stringsAsFactors =FALSE, sep = ",")
+
+mydata[1:10,]
+         
+```
+
+## Replace dash lines with empty spaces 
+
+
+```{r}
+library (stringr)
+newdata <- data.frame(str_replace_all(mydata$V1,"-",""))
+newdata[1:10,]
+
+```
+
+## Removing empty spaces
+```{r}
+#take only populated rows that do not contain emptly lines
+newdata <- as.data.frame(newdata[!apply(newdata == "", 1, all),])
+
+newdata[1:10,]
+```
+```{r}
+
+odd <- newdata[seq(1,nrow(newdata),2),] # only odd rows
+even <- newdata[seq(2,nrow(newdata),2),] # only even rows
+
+head(odd) #check out my odd rows
+
+head(even) #check out my even rows
+
+```
+
+## Segregating my even and odd rows, checking it out
+
+Merging rows into columns into a temp table; called new_table
+
+```{r}
+#Merging the odd & the even rows into a newly created empty place holder table
+
+new_table <- data.frame(c())
+new_table <- data.frame(paste(odd,even))
+
+new_table[1:5,]
+```
+
+## Merge the even and odd rows in columns
+
+Creating headers in the merge table while eliminating the pipes (|) deliminators and deleting first rows 
+
+since the new headers were created; like starting from a clean slate of a new table
+
+```{r}
+# Create headers
+Headers <- c("Pair","Player Name","Total","Round 1","Round 2","Round 3", "Round 4","Round 5","Round 6","Round 7","State","USCF ID / Rtg (Pre->Post)","Pts","1","2","3","4","5","6","7","Avg Pre Rating")
+
+# Eliminating | and Separating into columns
+
+df <- separate(data = new_table, col=paste.odd..even., into = Headers, sep = "\\|")
+
+# HOusekeeping: Delete row containing all columns names
+df <- df[-c(1), ]
+
+df[1:5,]
+
+```
+```{r}
+# Extracting numerical values from "USCF ID / Rtg (Pre->Post)" column for calculating averages later
+
+temp <- str_extract_all(df$`USCF ID / Rtg (Pre->Post)`,"\\b\\d{1,}")
+temp <- data.frame(as.character(temp)) #making into dataframe
+head(temp)
+
+# breaking out the columns; extracting the 3 numericals
+
+# Split the data frame: 1 column -> 3 different columns
+
+temp <- separate(data = temp, col = as.character.temp., into = c("col1","col2","col3"), sep = ",")
+
+head(temp)
+
+```
+
+```{r}
+# Temporary column vectors
+ID <- str_extract_all(temp$col1,"[[:digit:]]{1,}")
+Pre_rate <- str_extract_all(temp$col2,"[[:digit:]]{1,}")
+Post_rate <- str_extract_all(temp$col3,"[[:digit:]]{1,}")
+
+#converting ID, pre rating & post rating columns into numerics for calculation purposes
+df$`USCF ID` <- as.numeric(ID)
+df$`Pre Rating` <- as.numeric(Pre_rate)
+df$`Post Rating` <- as.numeric(Post_rate)
+
+head(df)
+
+```
+
+## Subsetting the temp table into smaller one and taking only the relevant columns
+
+```{r}
+df_new <- subset(df, select = c(1,2,11,22,3,23,24,21))
+head(df_new)
+
+class(head(df_new$'Pre Rating')) # check class type
+
+class(head(df_new$`Avg Pre Rating`)) # check class type
+
+# converting characters in Avg. Pre Rating columns to numeric
+df_new$`Avg Pre Rating` <- 0
+
+head(df_new)
+
+df_new[39,] #double checking on a single Player
+```
+
+## Extricating numericals from opponents to compute its avg scores and create a Opponents only table
+
+```{r}
+# Extracting numerical values from rounds played (opponents against)
+opp1 <- data.frame(as.numeric(str_extract_all(df$`Round 1`,"[[:digit:]]{1,}")))
+opp2 <- data.frame(as.numeric(str_extract_all(df$`Round 2`,"[[:digit:]]{1,}")))
+opp3 <- data.frame(as.numeric(str_extract_all(df$`Round 3`,"[[:digit:]]{1,}")))
+opp4 <- data.frame(as.numeric(str_extract_all(df$`Round 4`,"[[:digit:]]{1,}")))
+opp5 <- data.frame(as.numeric(str_extract_all(df$`Round 5`,"[[:digit:]]{1,}")))
+opp6 <- data.frame(as.numeric(str_extract_all(df$`Round 6`,"[[:digit:]]{1,}")))
+opp7 <- data.frame(as.numeric(str_extract_all(df$`Round 7`,"[[:digit:]]{1,}")))
+
+#  build an Opponents data frame
+opponents <- cbind(df$Pair, df$`Player Name`, opp1, opp2, opp3, opp4, opp5, opp6, opp7)
+names(opponents) <- c("Pair","Player Name","Opp 1","Opp 2","Opp 3","Opp 4","Opp 5","Opp 6","Opp 7")
+
+head(opponents) # Opponents only Dataframe
+
+```
+
+## Continuing with the Opponents only table, calculate how many games each of them had played 
+
+```{r}
+# Detecting any NA replaced and by 0.
+opponents[is.na(opponents)] <- 0
+
+head(opponents)
+```
+```{r}
+
+opponents[is.na(opponents)] <- 0 # NA replacement by zero
+count = 0
+# Finding number of games played
+for(i in 1:nrow(opponents)){
+    for(j in 3:9){
+    if(opponents[i,j]>0){
+      count = count + 1
+    }
+    opponents$No_of_Games_Played[i] <- sum(count)
+    
+    }
+  count = 0
+}
+
+head(opponents)
+
+```
+
+## Matching up players (via Pairing column) with its opponents played and compute the pre rating averages
+
+```{r}
+
+#Resetting Avg Pre Rating column to zero before calculating their averages
+df_new$`Avg Pre Rating` <- 0
+
+# Compute Average Pre-Rating for each player
+for (k in 3:9){
+  for (j in 1:nrow(df_new)){
+    for (i in 1:nrow(df_new)){
+      if (as.numeric(opponents[j,k]) == as.numeric(df_new$Pair[i])){
+        df_new$`Avg Pre Rating`[j] <- as.numeric(df_new$`Avg Pre Rating`[j]) + as.numeric(df_new$`Pre Rating`[i])
+      }
+    }
+  }
+}
+
+# Each player's average based on the number of played games
+df_new$`Avg Pre Rating`  <- round(as.numeric(df_new$`Avg Pre Rating`) / opponents$No_of_Games_Played,0)
+
+df_new[1:10,]
+```
+
+## Data Analysis via ggplotings 
+
+```{r}
+library(ggplot2)
+library(plotly)
+require(ggthemes)
+# Scatter plot to Check if there's any reasonable trend?
+
+p1 <- ggplot(df_new, aes(df_new$'Pre Rating', y = df_new$'Post Rating')) + geom_point(aes(color=State))+theme_economist()
+
+p1 <- ggplotly(p1)
+
+p1
+
+fit <- lm(df_new$'Avg Pre Rating' ~ df_new$'Pre Rating', data = df_new)
+
+p3 <- ggplot(df_new, aes(df_new$'Pre Rating', y = df_new$'Avg Pre Rating')) + 
+  geom_point(aes(color=df_new$Total)) + theme_economist() +
+  stat_smooth(method = "lm", col = "red") +
+  
+    ggtitle(paste("Adj R2 = ",signif(summary(fit)$adj.r.squared, 5),";
+                     Intercept =",signif(fit$coef[[1]],5 ),";
+                     Slope =",signif(fit$coef[[2]], 5),";
+                     P =",signif(summary(fit)$coef[2,4], 5)))
+  
+  
+
+p3 <- ggplotly(p3)
+
+p3
+
+```
+
+## Observations from Scatterplots:
+
+(1)  By States:  There appears to have a positive correlation between player's pre tournament ratings vs. 
+
+     opponents' pre tournament ratings.  By states, they appear "matched" up pretty well in terms of
+     
+     skills.  This might have been to prevent lop-sided matches whereby, very good players are playing
+     
+     against less-skilled players.
+     
+(2)  The 2nd chart showed a comparison between the player’s own pre-rating vs. their opponents’ average
+
+     pre-rating. The color corresponds to the total number of points scored in the tournament.
+    
+     All observations above the red diagonal line represent players had a higher pre-rating than
+     
+     the average of their opponents, and the points below the line is the reverse.
+
+Conclusion:
+
+    While chart 1 showed a "well-distributed" match ups of players across states, which is good for the
+    
+    game and the fans especially, chart 2 tells a different story;  Chart 2 gives suggest that its almost
+    
+    half and half whereby highly-ranked players were matched up against lower- ranked players (based on
+    
+    pre tournament rankings).  This is visually discerning by the Red regression line which is almost
+    
+    almost flat as evidenced by slope = 0.128.
+
+
+```{r}
+ggplot(df_new, aes(df$'State',df$`Pre Rating`)) +geom_boxplot()
+
+ggplot(df_new, aes(df$'State',df$`Post Rating`)) +geom_boxplot()
+```
+
+## Observations of distribution of ranking scores from Box plots:
+
+(1) By States again:  Except for Ohio which had only 1 entry (therefore no distribution), both Michigan
+
+    and Ontario players' had higher median pre-tournment rankings vs. post tournment rankings.  Also, they
+    
+    had a smaller pre-tournament spread while not only their post-tournament spread became bigger, their
+    
+    medium ranking decreased. This showed that this tournament had an adverse effect on some players more 
+    
+    than others which could indirectly be explained by chart 2 (scatter plot above) which showed half of
+    
+    the players were matched up against players that were ranked higher than themselves.
+
+```{r}
+
+#Creating a data table 
+datatable(df_new, rownames=FALSE)
+
+head(datatable)
+```
+
+```{r}
+#Writing to CSV file
+write.table(df_new,file="Sufian_Suwarman_Project1.csv",row.names=FALSE,col.names=TRUE,sep=",")
+```
+

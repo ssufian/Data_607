@@ -273,50 +273,64 @@ p3
 
 (1)  By States:  There appears to have a positive correlation between player's pre tournament ratings vs. 
 
-     opponents' pre tournament ratings.  By states, they appear "matched" up pretty well in terms of
+     opponents' post tournament ratings.  By states, they appear high-ranking players or very good
      
-     skills.  This might have been to prevent lop-sided matches whereby, very good players are playing
+     players were retaining their ranking after the tournament; Does this mean that good players  
      
-     against less-skilled players.
+     were playing lower ranked players and therefore were able to maintain their high status?  That is a 
+     
+     question we shall seek to answer with other type of charts, if possible.
+     
      
 (2)  The 2nd chart showed a comparison between the player’s own pre-rating vs. their opponents’ average
 
      pre-rating. The color corresponds to the total number of points scored in the tournament.
     
-     All observations above the red diagonal line represent players had a higher pre-rating than
+     All observations above the red diagonal line represent players who had a higher pre-rating than
      
-     the average of their opponents, and the points below the line is the reverse.
+     the average of their opponents' pre tournament ratings, and the points below the line is the
+     
+     reverse.
 
-Conclusion:
+Possible Conclusion from Scatterplots?
 
-    While chart 1 showed a "well-distributed" match ups of players across states, which is good for the
+    chart 1 showed players across states had maintained their ranking status post-tournament;
     
-    game and the fans especially, chart 2 tells a different story;  Chart 2 gives suggest that its almost
+    alluding to speculation that high-ranking players might be playing against lower-ranking players. 
     
-    half and half whereby highly-ranked players were matched up against lower- ranked players (based on
+    Chart 2 gives suggest that its almost half of highly ranked players were matched against lower ranked
     
-    pre tournament rankings).  This is visually discerning by the Red regression line which is almost
+    players. This is visually discerning by the Red regression line which is almost flat as evidenced by
     
-    almost flat as evidenced by slope = 0.128.
+    small slope of 0.128, see 2nd scatter plot.
+    
+    
 ```{r}
 #histogram to confirm that first scatter plot (chart 1) was misleading
 
 hist(df_new$`Avg Pre Rating`, main="Avg Opponents Pre Tournament Ratings", xlab="opponents' Avg pre rating")
 
-hist(df_new$`Pre Rating`, main="Players' Own Pre Tournament Ratings", xlab="Players' Pre rating")
+hist(df_new$`Pre Rating`, main="Players' Own Pre Tournament Ratings", xlab="Players' own Pre rating")
 
-hist(df_new$`Post Rating`, main="Players' Own Post Tournament Ratings", xlab="Players' Post rating")
+hist(df_new$`Post Rating`, main="Players' Own Post Tournament Ratings", xlab="Players' own Post rating")
 ```
 
-## Observations from Basic Histograms:
+## Observations from Basic Histograms, to confirm or deny the hypothesis above?
 
-(1)  First 2 histograms of opponnents avg pre-tournament rankings vs. the players' own ranking showed
+(1)  The first histogram which is normally distributed, showed a lower avg. pre-tournament ranking for 
 
-     a normal distribution of  their opponents' average ranking of around 1350.  However, the players' 
+     the opponents of around 1350.  The 2nd histogram, showed a left-skewed distribution with a
      
-     own pre-tournament rankings was left-skewed with a higher ratings of around 1500.  These addtional 
+     higher pre-tournament ranking of around 1500.  The 3rd histogram also showed a left-skwed
      
-     charts showed the likely hood of player mis-matches in terms of skill sets
+     distribution with a higher post-tournament ranking, albeit, being more spread out.
+     
+(2)  The 2 histogram charts, suggested that given, the distributions of the opponents's and the players'
+
+     ranking, its is more likely than not that they were match up against lower-ranked players and thus
+     
+     able to retained their post-tournament status fairly well.
+     
      
 ```{r}
 ggplot(df_new, aes(df$'State',df$`Pre Rating`)) +geom_boxplot()
@@ -324,19 +338,19 @@ ggplot(df_new, aes(df$'State',df$`Pre Rating`)) +geom_boxplot()
 ggplot(df_new, aes(df$'State',df$`Post Rating`)) +geom_boxplot()
 ```
 
-## Observations of distribution of ranking scores from Box plots:
+## Observations of distribution of own players' ranking from Box plots:
 
-(1) By States again:  Except for Ohio which had only 1 entry (therefore no distribution), both Michigan
+(1) Perhaps, Box plots does a better job in explaining the rankings of players before and after the 
 
-    and Ontario players' had higher median pre-tournment rankings vs. post tournment rankings.  Also, they
+    tournament.
+
+    By States again:  Except for Ohio which had only 1 entry (therefore no distribution), both Michigan
+
+    and Ontario players' had approximately the same median pre-tournment rankings vs. post tournment
     
-    had a smaller pre-tournament spread while not only their post-tournament spread became bigger, their
+    rankings.  Also, they had a smaller pre-tournament spread while their post-tournament spread
     
-    medium ranking decreased. This showed that this tournament had an adverse effect on some players more 
-    
-    than others which could indirectly be explained by chart 2 (scatter plot above) which showed half of
-    
-    the players were matched up against players that were ranked higher than themselves.
+    increased.
 
 ```{r}
 

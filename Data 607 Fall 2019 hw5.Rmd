@@ -1,0 +1,267 @@
+---
+title: "Data 607 HW5"
+author: "Sufian"
+date: "9/24/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Prob Statement
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+(1) Create a .CSV file (or optionally, a MySQL database!) that includes all of the information above. 
+
+You’re encouraged to use a “wide” structure similar to how the information appears above, so that you can
+
+practice tidying and transformations as described below. 
+
+(2) Read the information from your .CSV file into R, and use tidyr and dplyr as needed to tidy and
+
+transform your data.   
+
+(3) Perform analysis to compare the arrival delays for the two airlines. 
+
+(4) Your code should be in an R Markdown file, posted to rpubs.com, and should include narrative
+
+descriptions of your data cleanup work, analysis, and conclusions. 
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+RPubs Link:
+
+http://rpubs.com/ssufian/532710
+
+Github Links:
+
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+## Loading data and importing necessary packages
+
+```{r}
+library(zoo)
+library(tidyr)
+library(dplyr)
+
+#loading "wide" data from Github Repo
+
+
+url <- 'https://raw.githubusercontent.com/ssufian/Data_607/master/airlines.csv'
+
+df1 <- read.delim(file =url, header=T , stringsAsFactors =FALSE, sep = ",")
+
+df1 # checking the raw data sets
+
+df1 <- df1 %>% mutate_all(na_if,"")%>%  
+  do(na.locf(.)) %>% 
+  distinct %>% # remove duplications after filling in empty lines with previous row
+  rename(Airlines= X, arr_time = X.1) 
+
+
+df1 <- gather(df1,"destination","N_flights",3:7)
+
+df1
+
+df1 <- df1 %>% 
+  group_by(Airlines, arr_time) %>% 
+  summarise(n_flights=sum(N_flights)) %>% 
+  group_by(Airlines) %>% 
+  mutate(percent_of_flights = n_flights/sum(n_flights))
+
+df1 
+
+```
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+Summary of actions taken during the data munging process:
+
+- After loading dataset, I took to make sure I have complete lines of data by filling in with NA and 
+
+  replacing it with last observed data in order to fill out any missing rows
+  
+- I further went on to remove any duplications that may have arise due to the process of filing in blanks
+
+- Renaming any columns necessary for further analysis
+
+- I finally used the dplyr & Tidyr packages to get to the dataset needed to perform further quantative
+
+   analysis
+
+  (a) First groupby airlines and arrival time
+  
+  (b) aggregation 
+  
+  (c) mutating to create a new column; % of delays 
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+## Data Analysis 1
+
+Comparision between arrival delays for the two airlines as pecent of flights taken by each airways
+
+```{r}
+require(ggthemes)
+library(ggplot2)
+
+# Basic barplot - abs numbers
+df1 %>% group_by(Airlines, arr_time) %>% 
+  group_by(percent_of_flights) %>% 
+  ggplot(aes(x=Airlines, y=n_flights, fill = arr_time)) +
+  geom_bar(stat="identity", width = 0.5, position="dodge")+
+  geom_text(aes(label=n_flights), vjust=1.6, color="black",position = position_dodge(0.45), size=3.5)+
+  ggtitle("Number Delay Arrivals by Airlines")+
+  theme_economist()
+
+```
+```{r}
+library(formattable)
+
+# Basic barplot - percentage %
+df1 %>% group_by(Airlines, arr_time) %>% 
+  group_by(percent_of_flights) %>% 
+  ggplot(aes(x=Airlines, y=percent_of_flights, fill = arr_time)) +
+  geom_bar(stat="identity", width = 0.5, position="dodge")+
+  geom_text(aes(label=percent(round(percent_of_flights,digits=2))), vjust=1.6, color="black",position =  position_dodge(0.45),     size=3.5)+
+  ggtitle("% of Delay Arrivals by Airlines")+
+  theme_economist()
+```
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+Observation 1:
+
+Given the number of flights taken by these two airlines, they actually were mostly on-time in the high 
+
+80 percentage range: 87% and 89% respectively for Alaska Airline and AM West Airline.  By the same token,
+
+the delays percentages for both airlines were relatively low for both; with Alaska Airline about
+
+2% worse than AM West airline.
+
+--------------------------------------------------------------------------------
+
+\clearpage
+## Data Analysis 2
+
+Comparision between arrival delays for the two airlines by destinations of the two airways
+
+```{r}
+#loading data again to perform arrival comparasion BUT by destination
+dfdest <- read.delim(file =url, header=T , stringsAsFactors =FALSE, sep = ",")
+
+## Fill in empty rows with NA and Updating rows with earlier/previous rows values
+dfdest <- dfdest %>% filter(complete.cases(" "))%>% 
+  mutate_all(na_if,"")%>%  
+  do(na.locf(.)) %>% 
+  distinct%>% 
+  rename(Airlines= X, arr_time = X.1) 
+
+dfdest
+
+#making it long format
+dfdest1<- gather(dfdest,"destination","N_flights",3:7)
+
+dfdest1
+
+# this has another layer of groupby; adding destination
+dfdest1 <- dfdest1 %>% 
+  group_by(Airlines, arr_time, destination) %>% 
+  summarise(n_flights=sum(N_flights)) %>% 
+  group_by(Airlines) %>% 
+  mutate(percent_of_flights = n_flights/sum(n_flights)) %>% 
+  mutate(rank = rank(percent_of_flights)) %>% 
+  filter(arr_time =="delayed")
+
+dfdest1
+
+```
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+This resulted in another variable called "rank" to further chart how the airlines performed in the
+
+different cities they served.
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+```{r}
+library(viridis)
+library(hrbrthemes)
+# Basic barplot - ranking of arrival delays by destinations
+dfdest1 %>% group_by(Airlines, arr_time, destination) %>% 
+  group_by(destination) %>% 
+  ggplot(aes(x=Airlines, y=rank, fill = destination)) +
+  geom_bar(stat="identity", width = 0.5, position="dodge")+
+  geom_text(aes(label=destination), vjust=1.6, color="black",position = position_dodge(0.55), size=3.00)+
+  geom_text(aes(label=rank), vjust=0.6, color="black",position = position_dodge(0.55), size=3.25)+
+  ggtitle("Arrival Rankings in Service Cities : Rank 1 -> Best")+
+  theme_excel() 
+
+```
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+Observation 2:  note: (rank 1 => best)
+
+For Alaska Airline - Service city, Phoenix had the (best) lowest no. of delays; ranked 1 while Seattle
+
+had the highest no. of delays; ranked 7th
+
+For AM West Airline - Service city, Phoenix had the (worst) highest no. of delay; ranked 8 while Seattle
+
+had the lowest no. of delays; ranked 1
+                      
+Interesting Note: (A) Both airlines had opposite on-arrival performance for these 2 cities while all other
+
+                      cities were relatively constant
+
+```{r}
+# Basic barplot - Numbers of arrival delays by destinations
+dfdest1 %>% group_by(Airlines, arr_time, destination) %>% 
+  group_by(destination) %>% 
+  ggplot(aes(x=Airlines, y=n_flights, fill = destination)) +
+  geom_bar(stat="identity", width = 0.5, position="dodge")+
+  geom_text(aes(label=n_flights), vjust=0.1, color="black",position = position_dodge(0.55), size=3.00)+
+  geom_text(aes(label=destination), vjust=1.4, color="black",position = position_dodge(0.55), size=3.25)+
+  ggtitle("No. of Delays in Service Cities")+
+  theme_excel()
+```
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+This chart is simply to confirm by no. of delays of these 2 airlines to the
+
+different cities they served; Alask Airways is best in Phoenix and worst in Seattle while the opposite 
+
+is true for AM West Airways
+
+--------------------------------------------------------------------------------
+
+\clearpage

@@ -41,6 +41,7 @@ http://rpubs.com/ssufian/532710
 
 Github Links:
 
+
 https://github.com/ssufian/Data_607
 
 --------------------------------------------------------------------------------
@@ -50,6 +51,7 @@ https://github.com/ssufian/Data_607
 ## Loading data and importing necessary packages
 
 ```{r}
+library(janitor)
 library(zoo)
 library(tidyr)
 library(dplyr)
@@ -73,14 +75,41 @@ df1 <- gather(df1,"destination","N_flights",3:7)
 
 df1
 
+
+df2 <- df1 # to use as spread 
+
 df1 <- df1 %>% 
   group_by(Airlines, arr_time) %>% 
   summarise(n_flights=sum(N_flights)) %>% 
   group_by(Airlines) %>% 
   mutate(percent_of_flights = n_flights/sum(n_flights))
 
+# to get a dataframe in the format to compute the overall arrival performance of the airlines
 df1 
 
+
+#seperating delays and on-time into 2 columns
+df2 <- spread(df2,arr_time, N_flights)
+
+ctm2 <- df2 %>%
+        clean_names() #using janitor library to remove spaces and put int underline in column name
+
+ctm2
+
+ddf3 <- ctm2 %>% 
+    group_by(airlines,destination)%>% 
+    mutate(percent_delayedflts = delayed/sum(delayed, on_time)) %>% 
+    mutate(tot_flts = sum(delayed, on_time))
+  
+# per city performance grouped by airlines % destinations
+ddf3 
+
+ddf4 <- ddf3 %>% 
+        group_by(airlines) %>% 
+        mutate(total_flights = sum(tot_flts)) %>% 
+        summarise(by_air= sum(tot_flts))
+
+ddf4
 ```
 
 --------------------------------------------------------------------------------
@@ -113,7 +142,12 @@ Summary of actions taken during the data munging process:
 
 ## Data Analysis 1
 
-Comparision between arrival delays for the two airlines as pecent of flights taken by each airways
+Comparision of overall performance between the two airlines 
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
 
 ```{r}
 require(ggthemes)
@@ -148,20 +182,37 @@ df1 %>% group_by(Airlines, arr_time) %>%
 
 Observation 1:
 
-Given the number of flights taken by these two airlines, they actually were mostly on-time in the high 
+Looking at the abs. values of on-tme and delays of AM West relative to Alaska side-by-side, it seems that
 
-80 percentage range: 87% and 89% respectively for Alaska Airline and AM West Airline.  By the same token,
+the higher no. of  delays in AM West is "small" relative to the number of on-time arrival of AM West,
 
-the delays percentages for both airlines were relatively low for both; with Alaska Airline about
+which is twice the amount compared to Alaska's. However, A second look by percentage basis, showed that
 
-2% worse than AM West airline.
+overall, AM West performed better than Alaska Airways; 11% delays for AM West vs. 13% delays Alaska.
+
+But is it?
 
 --------------------------------------------------------------------------------
 
 \clearpage
+
 ## Data Analysis 2
 
-Comparision between arrival delays for the two airlines by destinations of the two airways
+Comparision between arrival delays for the two airlines per destinations of the two airways to explain 
+
+this discrepancy...
+
+
+```{r}
+# Basic barplot - arrival performance of the 2 airlines by destinations
+ddf3 %>% 
+  ggplot(aes(x=destination, y=percent_delayedflts, fill = airlines)) +
+  geom_bar(stat="identity", width = 0.5,  position="dodge")+
+  geom_text(aes(label=percent(percent_delayedflts)), vjust=0.1, color="black",position = position_dodge(0.55), size=3.00)+
+  geom_text(aes(label=destination), vjust=1.4, color="black",position = position_dodge(0.55), size=3.25)+
+  ggtitle("Per city Delays of the 2 airlines")+
+  theme_excel()
+```
 
 ```{r}
 #loading data again to perform arrival comparasion BUT by destination
@@ -198,58 +249,44 @@ dfdest1
 
 \clearpage
 
-This resulted in another variable called "rank" to further chart how the airlines performed in the
-
-different cities they served.
+Checking and confirming the actual numbers of delays per city of the two airlines
 
 --------------------------------------------------------------------------------
 
 \clearpage
 
-
 ```{r}
-library(viridis)
-library(hrbrthemes)
-# Basic barplot - ranking of arrival delays by destinations
+# Basic barplot - Numbers of arrival delays per city
 dfdest1 %>% group_by(Airlines, arr_time, destination) %>% 
   group_by(destination) %>% 
-  ggplot(aes(x=Airlines, y=rank, fill = destination)) +
-  geom_bar(stat="identity", width = 0.5, position="dodge")+
-  geom_text(aes(label=destination), vjust=1.6, color="black",position = position_dodge(0.55), size=3.00)+
-  geom_text(aes(label=rank), vjust=0.6, color="black",position = position_dodge(0.55), size=3.25)+
-  ggtitle("Arrival Rankings in Service Cities : (Rank 1 = Best)")+
-  theme_excel() 
-
-```
-
---------------------------------------------------------------------------------
-
-\clearpage
-
-Observation 2:  note: (rank 1 => best)
-
-For Alaska Airline - Service city, Phoenix had the (best) lowest no. of delays; ranked 1 while Seattle
-
-had the highest no. of delays; ranked 7th
-
-For AM West Airline - Service city, Phoenix had the (worst) highest no. of delay; ranked 8 while Seattle
-
-had the lowest no. of delays; ranked 1
-                      
-Interesting Note: (A) Both airlines had opposite on-arrival performance for these 2 cities while all other
-
-cities were at a relatively constant level
-
-
-```{r}
-# Basic barplot - Numbers of arrival delays by destinations
-dfdest1 %>% group_by(Airlines, arr_time, destination) %>% 
-  group_by(destination) %>% 
-  ggplot(aes(x=Airlines, y=n_flights, fill = destination)) +
+  ggplot(aes(x=destination, y=n_flights, fill = Airlines)) +
   geom_bar(stat="identity", width = 0.5, position="dodge")+
   geom_text(aes(label=n_flights), vjust=0.1, color="black",position = position_dodge(0.55), size=3.00)+
   geom_text(aes(label=destination), vjust=1.4, color="black",position = position_dodge(0.55), size=3.25)+
-  ggtitle("No. of Delays in Service Cities")+
+  ggtitle("No. of Delays per Service Cities")+
+  theme_excel()
+```
+
+```{r}
+# Basic barplot - Total flights taken by 2 airlines per each city
+ddf3 %>% 
+  ggplot(aes(x=destination, y=tot_flts, fill = airlines)) +
+  geom_bar(stat="identity", width = 0.5,  position="dodge")+
+  geom_text(aes(label=(tot_flts)), vjust=0.1, color="black",position = position_dodge(0.55), size=3.00)+
+  geom_text(aes(label=destination), vjust=1.4, color="black",position = position_dodge(0.55), size=3.25)+
+  ggtitle("Total flights taken by the airlines per city")+
+  theme_excel()
+```
+```{r}
+
+# Basic barplot - Total no. of flts taken by each airlines
+ddf4 %>% 
+  ggplot(aes(x=airlines, y=by_air, fill=airlines)) +
+  geom_bar(stat="identity", width = 0.5,  position="dodge")+
+  geom_text(aes(label=by_air), vjust=0.1, color="black",position = position_dodge(0.55), size=3.00)+
+  geom_text(aes(label=airlines), vjust=1.4, color="black",position = position_dodge(0.55), size=3.25)+
+  ggtitle("Total no. of flights taken by the each airlines")+
+ 
   theme_excel()
 ```
 
@@ -257,12 +294,22 @@ dfdest1 %>% group_by(Airlines, arr_time, destination) %>%
 
 \clearpage
 
-This chart is simply to confirm by no. of delays of these 2 airlines to the
+Observation 2:
 
-different cities they served; Alask Airways is best in Phoenix and worst in Seattle while the opposite 
+By all measures, the per-city performance of Alaska Airways is better than AM West (as measured by abs.
 
-is true for AM West Airways
+numbers and percentage basis).  The only exception was Seattle in which Alaska was worse than AM West.
+
+The reason, the overall performance of AM West first appeared better was because they flew more flights
+
+overall, and as such,  with a bigger denominator in terms of total flights, the  percentage delays 
+
+per total flights taken resulted in a  smaller ratio than Alaska.  In fact, AM West flew twice as
+
+much as Alaska Airways did.
+
 
 --------------------------------------------------------------------------------
 
 \clearpage
+

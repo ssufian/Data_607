@@ -1,0 +1,418 @@
+
+### title: "Data 607 - Project 2a"
+
+author: "Sufian"
+
+date: "9/30/2019"
+
+output: html_document
+
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+Rpub link:
+
+http://rpubs.com/ssufian/535540
+
+Github link:
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+## Jai's list of Questions from his Discussion 5 post:
+
+NOTE:  Migrant Data refers to Immigration into area of destination; area, region or countries
+
+Jai posed these questions:  Summaries could be done by gender at any of the aggregation levels below
+
+•	Gender ratios of migrant stock for each region of the world, for each income group, etc. 
+
+•	Average gender ratios of world migrant stock. 
+
+•	What is the variance across countries. 
+
+•	Is there a trend across years for any of these sequences. 
+
+## This project will focus only the following 2 regions straddling between high vs. low income:
+
+- Developed vs. Less Developed Regions
+
+- High vs. Low Income Countries
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading Data from United Nations Reports (stpred in my Github repository)
+
+
+```{r }
+# Load necessary libraries
+
+library(janitor)
+library(zoo)
+library(tidyverse)
+library(magrittr)
+library(stringr)
+library(DT)
+library(tidyr)
+library(dplyr)
+
+url <- 'https://raw.githubusercontent.com/ssufian/Data_607/master/UN_MigrantStockTotal_2019%20(1).csv'
+
+# Reading & Loading data
+df <- read.csv(file = url ,sep = ",", na.strings = c("NA", " ", ""), strip.white = TRUE, stringsAsFactors = F, skip=13,header=F)
+
+head(df)
+
+#labeling columns 
+new_name <- c("Sort","Region","Notes","Code","Data_type","1990.Total","1995.Total","2000.Total","2005.Total","2010.Total","2015.Total","2019.Total","1990.Male","1995.Male","2000.Male","2005.Male","2010.Male","2015.Male","2019.Male","1990.Female","1995.Female","2000.Female","2005.Female","2010.Female","2015.Female","2019.Female")
+
+
+#Rename Columns
+df <- df %>% 
+     rename_at(vars(starts_with("V")), funs(gsub(.,"V",new_name))) 
+
+head(df)
+
+```
+
+## Data Munging using Dplyr & TidyR
+
+
+```{r}
+
+df1 <- df
+
+df1[df1==".."] <- "0"
+
+# making dataset long format
+df1 <- gather(df1,"year_types","n_years",6:26)
+head(df1)
+
+df2<-df1 %>% 
+  mutate(n_years=str_replace_all(n_years,",","")) %<>% mutate_at(7, as.numeric)
+
+head(df2)
+
+#segregate total years into male and female years 
+
+separate_DF <- df2 %>% separate(year_types, c("Year", "gender"))
+head(separate_DF)
+
+wide_DF <- separate_DF%>% spread(gender, n_years)
+head(wide_DF)               
+   
+no_zero_DF_wide <- wide_DF %>% filter(Female != 0)
+
+# Drop the unnecessary columns of the dataframe
+
+no_zero_DF_wide <- select (no_zero_DF_wide,-c(Notes,Code,Data_type)) %>% mutate_at(3, as.integer) 
+              
+head(no_zero_DF_wide)
+
+```
+
+```{r }
+
+no_zero_DF1 <- gather(no_zero_DF_wide, "gender","N_years",4:6)
+                     
+head(no_zero_DF1)                   
+                    
+```
+
+## Migration Trends Studies (by different level of economic and different developed regions)
+
+```{r}
+require(ggthemes)
+
+world_trend <- filter(no_zero_DF1, Region == 'WORLD') %>% 
+               filter(gender == "Male" | gender == "Female") %>% 
+               mutate(percent_migration_trends = N_years/sum(N_years))
+               
+head(world_trend)
+#trendline plots of World Migrants
+# Multiple line plot
+ggplot(world_trend , aes(x = Year, y = percent_migration_trends)) + 
+  geom_line(aes(color = gender), size = 1) +
+  scale_color_manual(values = c("#00AFBB", "#E7B800")) +
+  ggtitle("World - Migration Trendlines % terms: Men vs Women")+
+  theme_excel()
+
+
+```
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+Observation 1a:
+
+Total World Migrations by men & women have been rising from 1990 thru 2020 with men consistently higher than women
+
+Men seems to be more mobile than women across time 
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+## Drivers of World Migration Trends by gender (abs numbers)
+
+```{r}
+require(ggthemes)
+library(ggplot2)
+library(formattable)
+#world migration over the years male vs. female
+# Basic barplot - migration patterns over the years; men vs women
+
+world <- no_zero_DF1 %>% filter(Region == "WORLD")
+world
+ world %>% group_by(gender, Year) %>% 
+    ggplot(aes(x=Year, y=N_years,fill = gender)) + 
+    geom_bar(stat = "identity", position = "dodge") +
+  xlab("Year") + ylab("Int'l Migrant Stock") +
+  ggtitle("Drivers of World Migration Trends by Gender") + ylim(0, 271642105)+
+   theme_excel()
+```
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+Observation 1b:
+
+Total migratory growth mainly driven by Men in abs. terms across time; confirming the first chart
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+## Drivers of World Migration Trends by gender
+
+```{r}
+# Investigating variances of World Migration trends by Income & Development regions
+
+#variance by male & female
+world_trend_variance <- no_zero_DF1 %>% 
+                     group_by(gender) %>% 
+                      filter(gender == "Male" |gender == "Female" ) %>% 
+filter(Region== "High-income countries" | Region=="Low-income countries"| Region=="More developed regions"| Region=="Less developed regions") %>% 
+                mutate(std_dev = sd(N_years)) 
+
+head(world_trend_variance)
+
+p <- ggplot(world_trend_variance, aes(y=N_years,x=Region,fill=Region))+geom_boxplot()+
+  ggtitle("Variances of World Migration by Gender from FY90 - FY20")+facet_grid( ~ gender)+
+    theme_excel()
+p <- p + theme(axis.text = element_text(size = 10,angle =45, hjust = 1))
+
+p
+```
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+Observation 2a:
+
+- Both High Income countries and more developed regions experienced greater immigration influxes based on their
+
+medians with men seeing greater variances.  Not surprisingly, less developed regions and lower income countries saw
+
+lower immigration based on their much lower medians and it also had lower spread in its distributions
+
+
+```{r}
+# Trendlines by Hi Income Group
+Hi_Income_trend <- filter(no_zero_DF1, Region == 'High-income countries') %>% 
+              group_by(Year) %>% 
+               filter(gender == "Male" | gender == "Female") %>% 
+               mutate(percent_migration_trends = N_years/sum(N_years))
+               
+(Hi_Income_trend) 
+#trendline plots of Hi Income Migrants
+
+ggplot(Hi_Income_trend , aes(x = Year, y = percent_migration_trends)) + 
+  geom_line(aes(color = gender), size = 1) +
+  scale_color_manual(values = c("#00AFBB", "#E7B800")) +
+  ggtitle("Hi Income Group - Migration Trendlines % terms: Men vs Women")+
+  theme_excel()
+
+# trendline plots of More Developed Regions Migrants
+More_developed_trend  <- filter(no_zero_DF1, Region == 'More developed regions') %>% 
+               group_by(Year) %>%
+               filter(gender == "Male" | gender == "Female") %>% 
+               mutate(percent_migration_trends = N_years/sum(N_years))
+               
+head(More_developed_trend) 
+#trendline plots of More Developed Region Migrants
+
+ggplot(More_developed_trend , aes(x = Year, y = percent_migration_trends)) + 
+  geom_line(aes(color = gender), size = 1) +
+  scale_color_manual(values = c("#00AFBB", "#E7B800")) +
+  ggtitle("More Developed Region - Migration Trendlines % terms: Men vs Women")+
+  theme_excel() 
+#-------------------------------------------------------------------------------------------------------------------
+# trendline plots of Low Income Migrants
+Lo_Income_trend  <- filter(no_zero_DF1, Region == 'Low-income countries') %>% 
+               group_by(Year) %>%
+               filter(gender == "Male" | gender == "Female") %>% 
+               mutate(percent_migration_trends = N_years/sum(N_years))
+               
+head(Lo_Income_trend)
+#trendline plots of low Income Migrants
+
+ggplot(Lo_Income_trend , aes(x = Year, y = percent_migration_trends)) + 
+  geom_line(aes(color = gender), size = 1) +
+  scale_color_manual(values = c("#00AFBB", "#E7B800")) +
+  ggtitle("Low Income Group - Migration Trendlines % terms: Men vs Women")+
+  theme_excel()            
+
+# trendline plots of Less Developed Regions Migrants
+Less_developed_trend  <- filter(no_zero_DF1, Region == 'Less developed regions') %>% 
+               group_by(Year) %>%
+               filter(gender == "Male" | gender == "Female") %>% 
+               mutate(percent_migration_trends = N_years/sum(N_years))
+               
+head(Less_developed_trend)
+#trendline plots of Less Developed Migrants
+
+ggplot(Less_developed_trend  , aes(x = Year, y = percent_migration_trends)) + 
+  geom_line(aes(color = gender), size = 1) +
+  scale_color_manual(values = c("#00AFBB", "#E7B800")) +
+  ggtitle("Less Developed Region - Migration Trendlines % terms: Men vs Women")+
+  theme_excel() 
+```
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+Observation 2b:
+
+The various charts above were performed within each income countries and development regions to see how each
+
+gender's(men vs. women) migatory patterns changed over time. 
+
+- Hi Income countries:  Men is the dominant immigrant group relative to women but they diverged after FY20 with men 
+
+growing while women decreased
+
+- Less Developed Region:  Simiarly, Men again is the dominant immigrant group with men increasing post FTY20 while 
+
+women decreased; similar divergent trendline as in Hi Income countries
+
+- More Developed Region:  Surprisingly, Women is the dominant group here; trending at an elevated level vs.
+
+men. The interesting fact was, both genders did not see any growth (flat line) for almost 2 decades before women
+
+started to diverge and grew while surprisingly, men decreased around FY2005.  It was until late 2018's that men
+
+rebounded slightly and the women decreased simultaneously at the opposite end
+
+- Low Income countries:  Perhaps the most interesting trends of all is this sub-group. Women were trending higher
+
+early FY20 and then criss-crossed with men in mid FY2005.  Post FY2005, men decreased while women's numbers soared
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+## World migratory Variations over time 
+
+```{r}
+
+# comparing world migration variances over ALL Regions over time
+
+world_migration_wide <- no_zero_DF_wide %>% 
+                   group_by(Region, Year) %>% 
+                   mutate(femalepct = Female/Total) %>% 
+                   mutate(malepct = Male/Total) 
+                  
+
+head(world_migration_wide)
+```
+```{r}
+
+dfhist <- world_migration_wide %>% 
+         group_by(Year) #%>% 
+
+# Overlaid histograms
+pf <- ggplot(dfhist, aes(x=femalepct, color=Year)) +
+  geom_histogram(fill="red", alpha=0.5, position="identity")+facet_grid(Year ~ .)
+pf
+pm <- ggplot(dfhist, aes(x=malepct, color=Year)) +
+  geom_histogram(fill="yellow", alpha=0.5, position="identity")+facet_grid(Year ~ .)
+pm
+
+```
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+Observation 3:
+
+Variance Analysis showed that both men and women Total World migratory distributions over time were quite normal.  
+
+The only difference was women had a left-skew while men had a right skew.  Their central tendencies were very 
+
+similar as well.  The right skewness in men also confirmed the earlier box plots of the 2 regions with 2 income
+
+groupings which was showing that men relative to women had a higher spread due to longer positivve tails.  
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+## Summary
+
+This short study had shown very interesting migatory behaviors between men and women over the time periods:  1990 to 
+2019.  In general, men seem to be more mobile and was able to move into higher income countries.  It was also shown 
+
+that men were able to move more into the "less developed regions" as well.  However, what is paradoxical, was the
+
+trends that showed women were outpacing men in the "developed regions" and was also better in the low income
+
+countries.  This is ironic and deserved further investigations and analysis to say the least.  Because these two
+
+sets of findings seems to be in contradiction.  The next phase of this study should be:
+
+-  What were the constituents of all these sub-groupings?  What made up High income vs. low income and what 
+
+countries rolled up into "more developed regions" vs. "less developed regions".  
+
+-  Once we unpack that, we than have to see if there were any cross-listing of countries in one category with the 
+
+other category; meaning is a low income country considered less developed only or there were low income countries 
+
+categorized as high developed regions.  In other words, all the underlying countries needs to be unpacked to ensure
+
+there were no "double counting" which may have skewed the results above.  
+
+At this point, the above study is just the begining, and further investigations are needed to be explored in before
+
+any conclusions can be made about the general migratory behavior of the genders over time.
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+
+

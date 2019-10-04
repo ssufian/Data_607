@@ -8,21 +8,11 @@ date: "9/30/2019"
 output: html_document
 
 
-
---------------------------------------------------------------------------------
-
-\clearpage
-
 Rpub link:
 
 http://rpubs.com/ssufian/535540
 
-Github link:
 
-
---------------------------------------------------------------------------------
-
-\clearpage
 
 
 ## Jai's list of Questions from his Discussion 5 post:
@@ -44,6 +34,7 @@ Jai posed these questions:  Summaries could be done by gender at any of the aggr
 - Developed vs. Less Developed Regions
 
 - High vs. Low Income Countries
+
 
 --------------------------------------------------------------------------------
 

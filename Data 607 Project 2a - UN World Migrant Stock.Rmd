@@ -13,7 +13,9 @@ Rpub link:
 http://rpubs.com/ssufian/535540
 
 
-
+Source:  United Nations Population Division
+    
+         Department of Economic and Social Affairs :  UN  International Migrant Stock
 
 ## Jai's list of Questions from his Discussion 5 post:
 
@@ -29,6 +31,7 @@ Jai posed these questions:  Summaries could be done by gender at any of the aggr
 
 •	Is there a trend across years for any of these sequences. 
 
+
 ## This project will focus only the following 2 regions straddling between high vs. low income:
 
 - Developed vs. Less Developed Regions
@@ -36,14 +39,8 @@ Jai posed these questions:  Summaries could be done by gender at any of the aggr
 - High vs. Low Income Countries
 
 
---------------------------------------------------------------------------------
 
-\clearpage
-
-
-
-
-## Loading Data from United Nations Reports (stpred in my Github repository)
+## Loading Data from United Nations Reports 
 
 
 ```{r setup, include=FALSE}
@@ -139,7 +136,6 @@ ggplot(world_trend , aes(x = Year, y = percent_migration_trends)) +
   ggtitle("World - Migration Trendlines % terms: Men vs Women")+
   theme_excel()
 
-
 ```
 
 --------------------------------------------------------------------------------
@@ -166,7 +162,7 @@ library(formattable)
 # Basic barplot - migration patterns over the years; men vs women
 
 world <- no_zero_DF1 %>% filter(Region == "WORLD")
-world
+head(world)
  world %>% group_by(gender, Year) %>% 
     ggplot(aes(x=Year, y=N_years,fill = gender)) + 
     geom_bar(stat = "identity", position = "dodge") +
@@ -199,7 +195,7 @@ world_trend_variance <- no_zero_DF1 %>%
 filter(Region== "High-income countries" | Region=="Low-income countries"| Region=="More developed regions"| Region=="Less developed regions") %>% 
                 mutate(std_dev = sd(N_years)) 
 
-head(world_trend_variance)
+#Boxplot to show variances between regions and gender
 
 p <- ggplot(world_trend_variance, aes(y=N_years,x=Region,fill=Region))+geom_boxplot()+
   ggtitle("Variances of World Migration by Gender from FY90 - FY20")+facet_grid( ~ gender)+
@@ -222,14 +218,30 @@ medians with men seeing greater variances.  Not surprisingly, less developed reg
 lower immigration based on their much lower medians and it also had lower spread in its distributions
 
 
+--------------------------------------------------------------------------------
+
+\clearpage
+
+###  Lets go underneath the regions and the income groupings to better see the underlying
+
+
+###  migration patterns of the 2 genders better
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
 ```{r}
 # Trendlines by Hi Income Group
-Hi_Income_trend <- filter(no_zero_DF1, Region == 'High-income countries') %>% 
+Hi_Income_trend <- no_zero_DF1 %>% filter( Region == 'High-income countries') %>% 
               group_by(Year) %>% 
                filter(gender == "Male" | gender == "Female") %>% 
                mutate(percent_migration_trends = N_years/sum(N_years))
-               
-(Hi_Income_trend) 
+            
+head(Hi_Income_trend) 
+
 #trendline plots of Hi Income Migrants
 
 ggplot(Hi_Income_trend , aes(x = Year, y = percent_migration_trends)) + 
@@ -239,7 +251,7 @@ ggplot(Hi_Income_trend , aes(x = Year, y = percent_migration_trends)) +
   theme_excel()
 
 # trendline plots of More Developed Regions Migrants
-More_developed_trend  <- filter(no_zero_DF1, Region == 'More developed regions') %>% 
+More_developed_trend  <- no_zero_DF1 %>% filter( Region == 'More developed regions') %>% 
                group_by(Year) %>%
                filter(gender == "Male" | gender == "Female") %>% 
                mutate(percent_migration_trends = N_years/sum(N_years))
@@ -252,9 +264,9 @@ ggplot(More_developed_trend , aes(x = Year, y = percent_migration_trends)) +
   scale_color_manual(values = c("#00AFBB", "#E7B800")) +
   ggtitle("More Developed Region - Migration Trendlines % terms: Men vs Women")+
   theme_excel() 
-#-------------------------------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------
 # trendline plots of Low Income Migrants
-Lo_Income_trend  <- filter(no_zero_DF1, Region == 'Low-income countries') %>% 
+Lo_Income_trend  <- no_zero_DF1%>% filter(Region == 'Low-income countries') %>% 
                group_by(Year) %>%
                filter(gender == "Male" | gender == "Female") %>% 
                mutate(percent_migration_trends = N_years/sum(N_years))
@@ -269,7 +281,7 @@ ggplot(Lo_Income_trend , aes(x = Year, y = percent_migration_trends)) +
   theme_excel()            
 
 # trendline plots of Less Developed Regions Migrants
-Less_developed_trend  <- filter(no_zero_DF1, Region == 'Less developed regions') %>% 
+Less_developed_trend  <- no_zero_DF1 %>%  filter(Region == 'Less developed regions') %>% 
                group_by(Year) %>%
                filter(gender == "Male" | gender == "Female") %>% 
                mutate(percent_migration_trends = N_years/sum(N_years))
@@ -290,9 +302,9 @@ ggplot(Less_developed_trend  , aes(x = Year, y = percent_migration_trends)) +
 
 Observation 2b:
 
-The various charts above were performed within each income countries and development regions to see how each
+The various charts above were performed within each income countries and development regions to
 
-gender's(men vs. women) migatory patterns changed over time. 
+see how each gender's(men vs. women) migatory patterns changed over time. 
 
 - Hi Income countries:  Men is the dominant immigrant group relative to women but they diverged after FY20 with men 
 
@@ -310,10 +322,147 @@ started to diverge and grew while surprisingly, men decreased around FY2005.  It
 
 rebounded slightly and the women decreased simultaneously at the opposite end
 
-- Low Income countries:  Perhaps the most interesting trends of all is this sub-group. Women were trending higher
+- Low Income countries:  Perhaps the most interesting trends of all is this sub-group. Women
 
-early FY20 and then criss-crossed with men in mid FY2005.  Post FY2005, men decreased while women's numbers soared
+were trending higherearly FY20 and then criss-crossed with men in mid FY2005.  Post FY2005, men
 
+decreased while women's numbers soared
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+### Trying to understand the contradictory migration patterns  between more developed regions
+
+### vs. high income countries and less developed regions vs. low income countries?
+
+(1) Let's group known developed nations and high income together next to known less developed
+
+nations that are also low income. For example, G7 countries vs. 7 Less developed and Low Income
+
+Countries, which were randomly selected from each hemisphere
+
+(2) Then make a migratory trend comparision along gender lines to see if there are any 
+
+discerning (clear) migratory behavior between genders.
+
+
+Note:  My hunch is that the way United Nations grouped the countries into various categories
+
+may have cross-listed countries leading to this contradiction
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+```{r}
+
+#Segregating countries into poor (randomnly picked from each hemisphere) vs rich (G7 nations)
+
+rich_countires <- no_zero_DF1 %>% filter(Region == 'United States of America'|Region ==  'Canada'|Region ==  'France'|Region == 'Germany'|Region ==  'Italy'|Region == 'United Kingdom'|Region == 'Japan') %>% 
+              group_by(Year) %>%
+               filter(gender == "Male" | gender == "Female") %>% 
+               mutate(percent_migration_trends = N_years/sum(N_years))
+  
+  
+poor_countries <- no_zero_DF1 %>% filter(Region == 'Albania'|Region =='Venezuela (Bolivarian Republic of)'|Region == 'Mexico'|Region == 'Honduras'|Region =='Syrian Arab Republic'|Region =='Egypt'
+|Region =='Senegal') %>% 
+               group_by(Year) %>%
+               filter(gender == "Male" | gender == "Female") %>% 
+               mutate(percent_migration_trends = N_years/sum(N_years))
+
+poor_countries_men <- poor_countries %>% 
+                      filter(gender == "Male" | gender == "Female") %>% 
+                      group_by(gender) %>% 
+                      summarise(sum(N_years)) 
+
+rich_countries_men <- rich_countires%>% 
+                      filter(gender == "Male" | gender == "Female") %>% 
+                      group_by(gender) %>% 
+                      summarise(sum(N_years))  
+
+head(poor_countries)
+head(rich_countires)
+# bar plots of poor countries
+ggplot(poor_countries, aes(x=Year, y=percent_migration_trends,fill = gender)) + 
+    geom_bar(stat = "identity", position = "dodge") +
+  xlab("Year") + ylab("Int'l Migrant Stock") +
+  ggtitle("Drivers of World Migration in poor countries by Gender") +
+   theme_excel()
+# bar plots of G7 "rich" countries
+ggplot(rich_countires, aes(x=Year, y=percent_migration_trends,fill = gender)) + 
+    geom_bar(stat = "identity", position = "dodge") +
+  xlab("Year") + ylab("Int'l Migrant Stock") +
+  ggtitle("Drivers of World Migration in G7 countries by Gender") +
+   theme_excel()
+
+```
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+Observation 3a:
+
+By randomly picking known poor and less deveoped countries vs. known rich and developed 
+
+countries such as the G7 nations, it was more visible which gender was more mobile (dominant).
+
+It should be noted also that a more rigorous and robust way to select poor vs. rich countries
+
+is via each countries' GDP or other socio-economic metrics.  This extra step was to quickly
+
+answer the very confusing and contracdictory patterns that emerged in the  deep dive into
+
+the constituents of the different groupings in Observation 2b
+
+(1)  Visually from the Barcharts, Males were  more mobile over the last 3 decades  in poorer
+
+nations while the opposite it true for richer nations that made up of the G7 nations; in fact
+
+now that rich vs. poor countries were segregated distinctly to avoid cross-over
+
+categorization, women actually were slightly more mobile 51% to 49% relative men in the rich
+
+nations. While the opposite is true in the poorer countries.
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+### One last question was in the poorer Nations, which country experienced the most number of 
+
+### migration?
+
+The top 3 countries that experienced the largest migration flows were Venezuela, Syria and 
+
+Mexico for the last 3 decades:  1990 to 2019.  This was not surprising as these 3 were conflict
+
+nations; Venezuela had the most punishing economic collapse, the Syrians had a massive civil 
+
+war while sadly enough, Mexico had the worst civilian violence stemming from the Narco trade
+
+
+```{r}
+most_migrant_countries <- no_zero_DF1 %>% filter(Region == 'Albania'|Region =='Venezuela (Bolivarian Republic of)'|Region == 'Mexico'|Region == 'Honduras'|Region =='Syrian Arab Republic'|Region =='Egypt'
+|Region =='Senegal') %>% 
+               group_by(Year) %>% 
+               filter(gender=="Total") %>% 
+                          arrange(desc(N_years))
+
+most_migrant_countries 
+
+ggplot(most_migrant_countries, aes(x=Year, y=N_years/sum(N_years),fill = Region)) + 
+    geom_bar(stat = "identity", position = "dodge") +
+  xlab("Year") + ylab(" Migrant Stock") +
+  ggtitle("Driver countries of Migration in poorer nations") +
+   theme_excel()
+```
 
 --------------------------------------------------------------------------------
 
@@ -354,7 +503,7 @@ pm
 
 \clearpage
 
-Observation 3:
+Observation 3b:
 
 Variance Analysis showed that both men and women Total World migratory distributions over time were quite normal.  
 
@@ -370,34 +519,39 @@ groupings which was showing that men relative to women had a higher spread due t
 \clearpage
 
 
-## Summary
+## Summary Page
 
-This short study had shown very interesting migatory behaviors between men and women over the time periods:  1990 to 
-2019.  In general, men seem to be more mobile and was able to move into higher income countries.  It was also shown 
+This short study had shown very interesting migatory behaviors between men and women over the
 
-that men were able to move more into the "less developed regions" as well.  However, what is paradoxical, was the
+time periods:  1990 to 2019.  In general, men seem to be more mobile and was able to move into
 
-trends that showed women were outpacing men in the "developed regions" and was also better in the low income
+higher income countries.  It was also shown that men were able to move more into the "less
 
-countries.  This is ironic and deserved further investigations and analysis to say the least.  Because these two
+developed regions" as well.  However, what is paradoxical, was the trends that showed women
 
-sets of findings seems to be in contradiction.  The next phase of this study should be:
+were outpacing men in the "developed regions" and was also better in the low income
 
--  What were the constituents of all these sub-groupings?  What made up High income vs. low income and what 
+countries.  This was an ironic "findings" that deserved further investigations and analysis to
 
-countries rolled up into "more developed regions" vs. "less developed regions".  
+say the least.  Because these two sets of findings seems to be in contradiction.  The next
 
--  Once we unpack that, we than have to see if there were any cross-listing of countries in one category with the 
+step of this study was to truly separated out the traditionally known rich nations relative to
 
-other category; meaning is a low income country considered less developed only or there were low income countries 
+to the poorer nations.  I randomly picked 7 poor nations from each hemisphere and compared it
 
-categorized as high developed regions.  In other words, all the underlying countries needs to be unpacked to ensure
+to the G7 countries:
 
-there were no "double counting" which may have skewed the results above.  
+### The extra step show the following observations:
 
-At this point, the above study is just the begining, and further investigations are needed to be explored in before
+-  Once countries were unpacked, we clearly saw that women tend to be more mobile relative to 
 
-any conclusions can be made about the general migratory behavior of the genders over time.
+men 51% vs. 49%.  This statistics curiously was exactly the opposite in poorer countries with
+
+men having the advantage.  
+
+- It was also shown that within the poor countries, Venezuela, Syria and Mexico had the most
+
+migration flow activities, most probably stemming from internal socio-economic issues
 
 
 --------------------------------------------------------------------------------

@@ -41,14 +41,12 @@ Jai posed these questions:  Summaries could be done by gender at any of the aggr
 \clearpage
 
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+
 
 ## Loading Data from United Nations Reports (stpred in my Github repository)
 
 
-```{r }
+```{r setup, include=FALSE}
 # Load necessary libraries
 
 library(janitor)
@@ -344,6 +342,8 @@ dfhist <- world_migration_wide %>%
 pf <- ggplot(dfhist, aes(x=femalepct, color=Year)) +
   geom_histogram(fill="red", alpha=0.5, position="identity")+facet_grid(Year ~ .)
 pf
+
+
 pm <- ggplot(dfhist, aes(x=malepct, color=Year)) +
   geom_histogram(fill="yellow", alpha=0.5, position="identity")+facet_grid(Year ~ .)
 pm

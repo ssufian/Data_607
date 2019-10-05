@@ -1,0 +1,501 @@
+---
+title: "Data 607 - Project 2b"
+author: "Sufian"
+date: "10/3/2019"
+output: html_document
+---
+
+Rpubs:
+
+http://rpubs.com/ssufian/535805
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+Data Description
+
+A statistical take on the very popular Daily air quality measurements in New York from May to September 1973.  This 
+
+exercise utilized the reshape2 and dcast libraries as alternatives to TidyR's gather and spread methodologies.
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+A data frame with 154 observations on 6 variables:
+
+- Ozone numeric Ozone (ppb)
+
+- Solar.R numeric Solar R (lang)
+
+- Wind numeric Wind (mph)
+
+- Temp numeric Temperature (degrees F)
+
+- Month numeric Month (1–12)
+
+
+Day numeric Day of month (1–31)
+
+Details:
+
+Daily readings of the following air quality values for May 1, 1973 (a Tuesday) to September 30, 1973.
+
+Ozone: Mean ozone in parts per billion from 1300 to 1500 hours at Roosevelt Island
+
+Solar.R: Solar radiation in Langleys in the frequency band 4000–7700 Angstroms from 0800 to 1200 hours at Central Park
+
+Wind: Average wind speed in miles per hour at 0700 and 1000 hours at LaGuardia Airport
+
+Temp: Maximum daily temperature in degrees Fahrenheit at La Guardia Airport.
+
+Source:
+
+The data were obtained from the New York State Department of Conservation (ozone data) and the National Weather
+
+Service (meteorological data).
+
+References
+Chambers, J. M., Cleveland, W. S., Kleiner, B. and Tukey, P. A. (1983) Graphical Methods for Data Analysis. Belmont,
+
+CA: Wadsworth.
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+## Problem Statement
+
+This exericise performs a few data wrangling, cleaning and staging to get it ready for further analysis
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+
+```{r setup, include=FALSE}
+
+# Load necessary libraries
+require(ggthemes)
+library(janitor)
+library(zoo)
+library(tidyverse)
+library(magrittr)
+library(stringr)
+library(DT)
+library(tidyr)
+library(dplyr)
+library(reshape2)
+
+url <- 'https://raw.githubusercontent.com/ssufian/Data_607/master/NYC_airquality%20(1).csv'
+
+
+# Reading & Loading data
+df <- read.csv(file = url ,sep = ",", na.strings = c("NA", " ", ""), strip.white = TRUE, stringsAsFactors = F,header=T)
+
+head(df)
+
+df <- df %>% mutate_all(funs(replace_na(.,0))) %>%  # replacing NAs with Zero
+           select(-c(1))  # drop first irrelevant column from futher analysis
+dim(df)
+head(df)
+```
+
+## Wide to long format using melt 
+
+```{r }
+
+# Melt:  Wide to long format
+df1 <- melt(df, id.vars = c("Month", "Day"),
+  variable.name = "climate_type", 
+  value.name = "climate_value")
+
+dim(df1)
+head(df1)
+
+```
+
+### Bar plots of the climate variables from May 1973 to Sept 1973
+ 
+```{r}
+
+  ggplot(df1,aes(x=Month, y=climate_value,fill = climate_type)) + 
+  geom_bar(stat = "identity", position = "dodge") +
+  xlab("climate variables") + ylab("Climate Values") +
+  ggtitle("Climate Variables from May - Sept of 1973") + ylim(0, 300)+
+   theme_excel()
+
+```
+
+```
+
+### Detecting climate variable outliers
+
+
+Visualization and Mathematical Methods:
+
+For Visualization Methods, Boxplot with range 1.5 and Histogram with break 15 were used to know more about the
+
+data. For instance, Quantile Capping Method was used to detect the outliers(Mathematically) in the data for each
+
+variable 
+
+
+```
+
+
+
+
+
+
+
+```{r}
+
+
+
+#This function detects Outliers by quantile capping method
+outdetect <- function(c,w=1.5)
+{
+  h <- w*IQR(c,na.rm = T)
+  q <- quantile(c,probs=c(.25, .75),na.rm = T)
+  if(length(which(q[1]-h>c))==0)
+    cat("There are",sum(q[1]-h>c,na.rm = T),"observations below the 1st quantile\n")
+  else
+    cat("There are",sum(q[1]-h>c,na.rm = T),"observations below the 1st quantile","on rows",which(q[1]-h>c),"and the values are",boxplot.stats(c)$out,"\n")
+  if(length(which(q[2]+h<c))==0)
+    cat("There are",sum(q[2]+h<c,na.rm = T),"observations above the 3rd quantile\n")
+  else
+    cat("There are",sum(q[2]+h<c,na.rm = T),"observations above the 3rd quantile","on rows",which(q[2]+h<c),"and the values are",boxplot.stats(c)$out,"\n")
+}
+
+
+
+```
+
+
+
+
+### OZONE, Solar R, Temp and Wind Chartings to vizualize the different distribution sets
+
+```{r}
+
+ozone_dat <- df1 %>% 
+             filter(climate_type=='Ozone')
+
+head(ozone_dat) #extracting only ozone
+
+
+Solar_dat <- df1 %>% 
+             filter(climate_type=='Solar.R')
+
+head(Solar_dat) #extracting only Solar Radiation
+
+
+Wind_dat <- df1 %>% 
+             filter(climate_type=='Wind')
+
+head(Wind_dat ) #extracting only Wind_dat 
+
+Temp_dat <- df1 %>% 
+             filter(climate_type=='Temp')
+
+head(Temp_dat ) #extracting only Wind_dat 
+
+
+#boxplots & Histogram of Climate Variables
+par(mfrow=c(1,2))
+
+p <- ggplot(df1, aes(y=climate_value,x=climate_type,fill=climate_type))+geom_boxplot()+
+  ggtitle("Boxplot of Climate Variables for Sep 1973")+
+    theme_excel()
+p <- p + theme(axis.text = element_text(size = 10,angle =45, hjust = 1))
+
+p
+
+pm <- ggplot(df1, aes(x=climate_value)) +
+  geom_histogram(fill="yellow", alpha=1,binwidth = 13,position="identity",color='blue')+facet_grid( .~climate_type)+
+  labs(title="Climate histogram plots",x="Climate Variables", y = "Frequency")
+
+pm
+```
+
+
+### Quantifying  Outliers, if any: {Ozone, Solar Radiation, Wind & Temperature}
+
+
+```{r}
+my_string <- "Ozone Outliers:"
+print(my_string, quote = FALSE)
+outdetect(ozone_dat$climate_value)
+```
+
+
+
+```{r}
+my_string <- "Solar Radiation Outliers:"
+print(my_string, quote = FALSE)
+outdetect(Solar_dat$climate_value)
+```
+
+```{r}
+my_string <- "Wind Outliers:"
+print(my_string, quote = FALSE)
+outdetect(Wind_dat$climate_value)
+```
+```{r}
+my_string <- "Temp Outliers:"
+print(my_string, quote = FALSE)
+outdetect(Temp_dat$climate_value)
+```
+
+### Outliers Treatment
+
+Outliers by definition are rare events (should be). The simplest approach is to remove them and carry on with the
+
+analysis but capping method can also be used. 
+
+Percentile Capping is a method of imputing the outlier values by:
+
+- Replacing those observations outside the lower limit with the value of 5th percentile and those that lie above the
+
+upper limit, with the value of 95th percentile of the same dataset.
+
+```{r}
+# Function to cap outliers
+outcap <- function(x)
+{
+qnt <- quantile(x, probs=c(.25, .75), na.rm = T)
+caps <- quantile(x, probs=c(.05, .95), na.rm = T)
+H <- 1.5 * IQR(x, na.rm = T)
+sum(x > (qnt[2] + H))
+x[x < (qnt[1] - H)] <- caps[1]
+x[x > (qnt[2] + H)] <- caps[2]
+x<<-x
+}
+```
+
+### Outlier replacement (Data cleansing):  Before and After capping outliers are provided below
+
+
+```{r}
+
+Data <- df
+# Data cleansing
+outcap(ozone_dat$climate_value)
+Data$Ozone<- x
+outcap(Wind_dat$climate_value)
+Data$Wind<- x
+Data[c(9,18,48,30,62,99,101,117,121),c(1,3)]
+
+```
+
+### Data Transformation and Analysis
+
+### (A)  "Normalization Ozone thru shifting and log transforms"
+
+```{r}
+#vizualization tool for comparing normality distributions
+Viz <- function(x){
+  h1 <- hist(x,col="yellow",main="Histogram",xlab="Variables");
+  xfit<-seq(0,max(x),length=50) 
+  yfit<-dnorm(xfit,mean=mean(x),sd=sd(x)) 
+  yfit <- yfit*diff(h1$mids[1:2])*length(x)
+  lines(xfit, yfit, col="blue", lwd=2)
+}
+```
+
+```{r}
+
+
+mean_ozone <- ozone_dat %>% 
+             summarise(mean(climate_value))
+meanozone <- mean_ozone[1,1] # mean of ozone
+
+sd_ozone <- ozone_dat %>% 
+             summarise(sd(climate_value))
+sdozone <- sd_ozone[1,1] # mean of ozone
+
+hist(ozone_dat$climate_value, probability = TRUE, ylim = c(0, 0.11), col = "yellow")
+x <- 0:150
+y <- dnorm(x = x, mean = meanozone, sd = sdozone)
+lines(x = x, y = y, col = "blue")
+
+Viz(ozone_dat$climate_value)
+
+
+```
+
+```{r}
+check <- abs(ozone_dat$climate_value-15)
+
+Ozone_T <- log(check)
+
+Viz(Ozone_T)
+
+```
+
+### Q-Q Plot
+
+After shifting the values and logging it, Ozone is now more normally distributed; its definitely a step in the right
+
+direction
+
+```{r}
+
+
+par(mfrow=c(1,2))
+qqnorm(ozone_dat$climate_value,pch=16,main="Before Transformation",xlab="Sample quantiles of Ozone",ylab="Theoretical quantiles")
+qqline(ozone_dat$climate_value, col = 2)
+qqnorm(Ozone_T ,pch=16,main="After Transformation",xlab="Sample quantiles of Ozone",ylab="Theoretical quantiles")
+qqline(Ozone_T , col = 2)
+
+
+```
+
+### Q-Q Plot - Ozone
+
+The after Q-Q plot showed a more normal distribution set than before, especially at the left tail end.  However, the 
+
+middle can be further improved for sure, and that is left for future exercise
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+### (B)  "Normalization of Solar Radiation thru squaring transforms"
+
+```{r}
+mean_solar <- Solar_dat %>% 
+             summarise(mean(climate_value))
+meansolar <- mean_solar[1,1] # mean of solar
+
+sd_solar <- Solar_dat %>% 
+             summarise(sd(climate_value))
+sdsolar <- sd_solar[1,1] # Std dev of solar
+
+hist(Solar_dat$climate_value, probability = TRUE, ylim = c(0, 0.11), col = "yellow")
+x <- 0:350
+y <- dnorm(x = x, mean = meansolar, sd = sdsolar)
+lines(x = x, y = y, col = "blue")
+
+Viz(Solar_dat$climate_value)
+
+```
+
+```{r}
+check <- abs(Solar_dat$climate_value)^2
+
+Solar_T <- (check)
+
+Viz(Solar_T)
+```
+```{r}
+par(mfrow=c(1,2))
+qqnorm(Solar_dat$climate_value,pch=16,main="Before Transformation",xlab="Sample quantiles of Solar Radiation",ylab="Theoretical quantiles")
+qqline(Solar_dat$climate_value, col = 2)
+qqnorm(Solar_T ,pch=16,main="After Transformation",xlab="Sample quantiles of Solar Radiation",ylab="Theoretical quantiles")
+qqline(Solar_T , col = 2)
+
+```
+
+### Q-Q Plot - Solar Radiation
+
+The after Q-Q plot showed a more normal distribution set than before, especially the middle portion is above the 45
+
+degree line.  However again like Ozone, the left can be improved further, and that is left for future exercise
+
+--------------------------------------------------------------------------------
+
+\clearpag
+
+### (C)  "Wind is already Normal - Q-Q plot ascertains it, see below; no need for transformation"
+
+
+```{r}
+qqnorm(Wind_dat$climate_value ,pch=16,main="QQplot for Wind",xlab="Sample quantiles of Wind",ylab="Theoretical quantiles")
+qqline(Wind_dat$climate_value , col = 2)
+
+
+```
+```{r}
+shapiro.test(Wind_dat$climate_value) #Shapiro test for normality; making sure its really normal!
+```
+
+### Shapiro Wilk test to make sure Wind is really Normal
+
+Because P-value is greater than 0.05, we can be 95% confident that Wind data is normal for sure
+
+--------------------------------------------------------------------------------
+
+\clearpag
+
+
+### (D)  "Normalization of Temperature thru squaring transforms"
+
+
+```{r}
+Viz(Temp_dat$climate_value)
+```
+
+### Temperature is already quite normal, but lets see if squaring can make it better?
+
+```{r}
+check <- abs(Temp_dat$climate_value)^2
+
+temp_T <- (check)
+
+Viz(temp_T)
+```
+
+### Squaring, did make it slighlty better.  Lets see the before and after Q-Q plots
+
+```{r}
+par(mfrow=c(1,2))
+qqnorm(Temp_dat$climate_value,pch=16,main="Before Transformation",xlab="Sample quantiles of Temp",ylab="Theoretical quantiles")
+qqline(Temp_dat$climate_value, col = 2)
+qqnorm(temp_T,pch=16,main="After Transformation",xlab="Sample quantiles of Temp",ylab="Theoretical quantiles")
+qqline(temp_T, col = 2)
+```
+
+```{r}
+shapiro.test(temp_T) #Shapiro to check for normality
+
+```
+
+### Shapiro Wilk test to make sure Temperature is really Normal
+
+Because P-value is greater than 0.05, we can be 95% confident that Temperature data is normal
+
+--------------------------------------------------------------------------------
+
+\clearpag
+
+
+### Summary:
+
+This was a short exercise to use an alternative "Wide to Long" method using the reshape2 libraries; melt and dcast.
+
+The methodologies are very similar if one has multiple columns to compress into.  The 2nd half of the exercise is 
+
+a quick statistical take on how to view the data from a statistical stand point and perform some very standard data
+
+cleansing procedures such as data imputations of NAs, outlier detections using a capping method and some data 
+
+transformations.  It was found through these sort of exercise that one can see how much more cleaning certain 
+
+variables needed.  For example, Ozone and Solar Radiation had more cleanning to do even after outlier capping and 
+
+data transformations.  The reason could be that simply filling in NAs with zeros may not have been such a good 
+
+idea but another method of using mean or even percentile of the original data could've been better.  However, the 
+
+point of this exercise is to learn the data one has and go through an iterative process to clean it and stage it
+
+for further analysis.  
+

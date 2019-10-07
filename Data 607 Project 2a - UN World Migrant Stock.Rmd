@@ -38,9 +38,11 @@ Jai posed these questions:  Summaries could be done by gender at any of the aggr
 
 - High vs. Low Income Countries
 
+--------------------------------------------------------------------------------
 
+\clearpage
 
-## Loading Data from United Nations Reports 
+## Loading libraries
 
 
 ```{r setup, include=FALSE}
@@ -54,7 +56,11 @@ library(stringr)
 library(DT)
 library(tidyr)
 library(dplyr)
+```
 
+## Loading Data from United Nations Reports 
+
+```{r}
 url <- 'https://raw.githubusercontent.com/ssufian/Data_607/master/UN_MigrantStockTotal_2019%20(1).csv'
 
 # Reading & Loading data
@@ -118,7 +124,7 @@ head(no_zero_DF1)
                     
 ```
 
-## Migration Trends Studies (by different level of economic and different developed regions)
+## Migration Trends Studies (by different levels of economic & developed regions)
 
 ```{r}
 require(ggthemes)
@@ -183,7 +189,7 @@ Total migratory growth mainly driven by Men in abs. terms across time; confirmin
 
 \clearpage
 
-## Drivers of World Migration Trends by gender
+## Variances of World Migration Trends by gender
 
 ```{r}
 # Investigating variances of World Migration trends by Income & Development regions
@@ -215,18 +221,18 @@ Observation 2a:
 
 medians with men seeing greater variances.  Not surprisingly, less developed regions and lower income countries saw
 
-lower immigration based on their much lower medians and it also had lower spread in its distributions
+lower immigration based on their much lower medians and it also had lower spread in its
+
+distributions
 
 
 --------------------------------------------------------------------------------
 
 \clearpage
 
-###  Lets go underneath the regions and the income groupings to better see the underlying
+###  Lets go underneath the regions and the income groupings to better understand the 
 
-
-###  migration patterns of the 2 genders better
-
+### underlying migration patterns of the 2 genders better
 
 --------------------------------------------------------------------------------
 
@@ -306,21 +312,27 @@ The various charts above were performed within each income countries and develop
 
 see how each gender's(men vs. women) migatory patterns changed over time. 
 
-- Hi Income countries:  Men is the dominant immigrant group relative to women but they diverged after FY20 with men 
+- Hi Income countries:  Men is the dominant immigrant group relative to women but they diverged
+
+after FY20 with men 
 
 growing while women decreased
 
-- Less Developed Region:  Simiarly, Men again is the dominant immigrant group with men increasing post FTY20 while 
+- Less Developed Region:  Simiarly, Men again is the dominant immigrant group with men
+
+increasing post FTY20 while 
 
 women decreased; similar divergent trendline as in Hi Income countries
 
-- More Developed Region:  Surprisingly, Women is the dominant group here; trending at an elevated level vs.
+- More Developed Region:  Surprisingly, Women is the dominant group here; trending at an
 
-men. The interesting fact was, both genders did not see any growth (flat line) for almost 2 decades before women
+elevated level vs.men. The interesting fact was, both genders did not see any growth (flat
 
-started to diverge and grew while surprisingly, men decreased around FY2005.  It was until late 2018's that men
+line) for almost 2 decades before women started to diverge and grew while surprisingly, men
 
-rebounded slightly and the women decreased simultaneously at the opposite end
+decreased around FY2005.  It was until late 2018's that men rebounded slightly and the women
+
+decreased simultaneously at the opposite end
 
 - Low Income countries:  Perhaps the most interesting trends of all is this sub-group. Women
 
@@ -333,9 +345,10 @@ decreased while women's numbers soared
 
 \clearpage
 
-### Trying to understand the contradictory migration patterns  between more developed regions
+### Trying to understand the contradictory migration patterns  between more developed 
 
-### vs. high income countries and less developed regions vs. low income countries?
+### regions vs. high income countries and less developed regions vs. low income countries?
+
 
 (1) Let's group known developed nations and high income together next to known less developed
 
@@ -343,9 +356,9 @@ nations that are also low income. For example, G7 countries vs. 7 Less developed
 
 Countries, which were randomly selected from each hemisphere
 
-(2) Then make a migratory trend comparision along gender lines to see if there are any 
+(2) Then make a migratory trend comparision along gender lines to see if there were any 
 
-discerning (clear) migratory behavior between genders.
+discerning (clear) migration behavior between genders.
 
 
 Note:  My hunch is that the way United Nations grouped the countries into various categories
@@ -435,9 +448,10 @@ nations. While the opposite is true in the poorer countries.
 
 \clearpage
 
-### One last question was in the poorer Nations, which country experienced the most number of 
+### One last question was in the poorer Nations, which country experienced the most
 
-### migration?
+### number of migration?
+
 
 The top 3 countries that experienced the largest migration flows were Venezuela, Syria and 
 
@@ -505,14 +519,17 @@ pm
 
 Observation 3b:
 
-Variance Analysis showed that both men and women Total World migratory distributions over time were quite normal.  
+Variance Analysis showed that both men and women Total World migratory distributions over time
 
-The only difference was women had a left-skew while men had a right skew.  Their central tendencies were very 
+exhibited normality.  
 
-similar as well.  The right skewness in men also confirmed the earlier box plots of the 2 regions with 2 income
+The only difference was women had a left-skew while men had a right skew.  Their central
 
-groupings which was showing that men relative to women had a higher spread due to longer positivve tails.  
+tendencies were very similar as well.  The right skewness in men also confirmed the earlier box
 
+plots of the hight income & high developed region groupings which was showing that men relative
+
+to women had a higher spread due to longer positive tails.  
 
 --------------------------------------------------------------------------------
 
@@ -527,11 +544,11 @@ time periods:  1990 to 2019.  In general, men seem to be more mobile and was abl
 
 higher income countries.  It was also shown that men were able to move more into the "less
 
-developed regions" as well.  However, what is paradoxical, was the trends that showed women
+developed regions" as well.  However, what is paradoxical, were the trends that showed women
 
 were outpacing men in the "developed regions" and was also better in the low income
 
-countries.  This was an ironic "findings" that deserved further investigations and analysis to
+countries.  This was an ironic "finding" that deserved further investigation and analysis to
 
 say the least.  Because these two sets of findings seems to be in contradiction.  The next
 
@@ -545,13 +562,13 @@ to the G7 countries:
 
 -  Once countries were unpacked, we clearly saw that women tend to be more mobile relative to 
 
-men 51% vs. 49%.  This statistics curiously was exactly the opposite in poorer countries with
+men at 51% vs. 49%.  This statistics curiously was exactly the opposite in poorer countries
 
-men having the advantage.  
+with men having the slight advantage.  
 
-- It was also shown that within the poor countries, Venezuela, Syria and Mexico had the most
+- It was also shown that within the poor countries; Venezuela, Syria and Mexico had the most
 
-migration flow activities, most probably stemming from internal socio-economic issues
+migration flow activities, most probably stemming from its internal socio-economic issues
 
 
 --------------------------------------------------------------------------------

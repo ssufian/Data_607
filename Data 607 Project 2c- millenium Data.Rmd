@@ -1,0 +1,613 @@
+---
+title: "Data 607 Project 2c"
+author: "Sufian"
+date: "10/5/2019"
+output: html_document
+---
+
+
+Rpub Link:
+
+http://rpubs.com/ssufian/536313
+
+
+GitHub Link:
+
+
+https://github.com/ssufian/Data_607
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+### One of the many Headlines about the Millennials:
+
+### "Why Millennials Are The Most Screwed Generation Of All Time" 
+
+     editorial piece by Veronica Walsingham in Ranker.com
+     https://www.ranker.com/list/millennials-most-screwed-generation/veronica-walsingham
+     
+### (a) Data source: Federal Reserve Bank of New York Consumer Credit Panel / Equifax
+
+### (b) Data source: Bureau of Labor Statistics - https://data.bls.gov/PDQWeb/ln
+
+
+### Is the editorial headline about Millennails true? 
+
+Part  1:
+
+Let's explore and start by looking at their debt obligations relative to other generational groups, see below
+
+(a) Baby Boomers: Born 1946-1964 (54-72 years old) 
+
+(b) Generation X: Born 1965-1980 (38-53 years old) 
+
+### Millennials: Born 1981-1996 (22-37 years old) 
+
+(c) Generation Z: Born 1997-Present (0-21 years old)
+
+This exercise will focus on two forms of debt outstanding:  Student loans and Credit Card loans
+
+
+Part  2:
+
+The 2nd phase is to look at their Job prospects thru the lens of economic growth indicators since the 
+
+great recession of 2008;  GDP of economy and unemployement rate and tuition rates over time 
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+### The objective of this exercise is to answer: Are the Millennials really screwed?
+
+ - Let's start by looking at both ends of the economic spectrum facing this generation and then when all the facts are 
+
+in, do we agree or disagree with the statement above.  Lets find out....?
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+require(ggthemes)
+library(tidyverse)
+library(magrittr)
+library(stringr)
+library(tidyr)
+library(dplyr)
+library(lubridate)
+
+```
+
+## Loading Data, deleting unwanted columns
+
+
+```{r }
+
+url1 <- 'https://raw.githubusercontent.com/ssufian/Data_607/master/No_Student_Loan_by_Age.csv'
+
+url2 <- 'https://raw.githubusercontent.com/ssufian/Data_607/master/Student_Loan_by_Age.csv'
+
+# Reading & Loading data
+df1 <- read.csv(file = url1 ,sep = ",", na.strings = c("NA", " ", ""), strip.white = TRUE,skip=3, stringsAsFactors = F,header=T)
+
+df2 <- read.csv(file = url2 ,sep = ",", na.strings = c("NA", " ", ""), strip.white = TRUE,skip=3, stringsAsFactors = F,header=T)
+
+df1 <- df1 %>% select(-c(X.1:X.11)) # Number of Student loan borrowers
+
+df2 <- df2 %>% select(-c(X.1:X.142)) # Dollar amount in $millions of Student loans
+
+```
+
+## Data wrangling via Dplyr:  renaming pertinent columns
+
+
+```{r }
+
+oldnames = c("X30.39","X40.49","X50.59","X60.")
+newnames = c("under30_39","under40_49","under50_59","over60")
+
+dfclean1 <- df1 %>% 
+  rename(Year=X) %>% 
+  rename_at(vars(oldnames), ~ newnames) 
+
+dfclean2 <- df2 %>% 
+  rename(Year=X) %>% 
+  rename_at(vars(oldnames), ~ newnames) 
+head(dfclean1)
+head(dfclean2)
+
+
+
+
+```
+
+### Using Tidyr to make Wide to Long formatted dataframes
+
+```{r}
+dfnew1 <- gather(dfclean1,"Age_group","n_borrower",2:6)
+
+dfnew2 <- gather(dfclean2,"Age_group","amount_borrowed",2:6)
+         
+head(dfnew1)
+head(dfnew2)
+```
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+### Looking at their Student Loans
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+```{r}
+pn <- ggplot(data = dfnew1, aes(x = Year, y = n_borrower, fill = Age_group)) + 
+    geom_bar(stat = "identity", position = "dodge") +
+  ggtitle("Total Number (millions) of Student loan borrower by age group")+ 
+  theme_excel()
+pn
+
+
+pd <- ggplot(data = dfnew2, aes(x = Year, y = amount_borrowed, fill = Age_group)) + 
+    geom_bar(stat = "identity", position = "dodge") +
+  ggtitle("Total Amount ($Billions) of Student loan borrower by age group")+
+  theme_excel()
+pd
+```
+
+### Observation 1:
+
+Since the recession, both Millenials and Gen Z had been the highest number of borrowers and the highest by dollar values
+
+as well.  While Gen Z's borrowing rate started to plateu out by mid 2012, the Millenials' student debt rate kept growing.
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+```{r}
+
+url3 <- 'https://raw.githubusercontent.com/ssufian/Data_607/master/tot_debt_by_age.csv'
+
+url4 <- 'https://raw.githubusercontent.com/ssufian/Data_607/master/Debt%20Share%20by%20Product%20Type%20and%20Age.csv'
+
+# Reading & Loading data
+df3 <- read.csv(file = url3 ,sep = ",", na.strings = c("NA", " ", ""), strip.white = TRUE,skip=3, stringsAsFactors = F,header=T)
+
+df4 <- read.csv(file = url4 ,sep = ",", na.strings = c("NA", " ", ""), strip.white = TRUE,skip=2, stringsAsFactors = F,header=T)
+
+df3 <- df3 %>% select(-c(X:X.13)) # Number of Student loan borrowers
+
+df4 <- df4 %>% select(-c(X.1:X.11)) # Dollar amount in $millions of Student loans
+
+
+```
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+### Now looking at Total debt by age group and see how Millenials fare?
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+```{r}
+
+df3new <-df3 
+ 
+oldnames = c("X18.29","X30.39","X40.49","X50.59","X60.69","X70.")
+newnames = c("under18_29","under30_39","under40_49","under50_59","under60_69","over70")
+
+dfclean3 <- df3new  %>%
+  slice(1:(n()-2)) %>% 
+  rename_at(vars(oldnames), ~ newnames) 
+
+dfclean4 <- df4  %>% 
+  rename_at(vars(oldnames), ~ newnames) %>% 
+  slice(1:6) %>% 
+  rename(credit_type=X)
+
+
+
+
+dfclean3 <- dfclean3 #%<>% 
+        # mutate(year= as.Date(year, format= "%d.%m.%Y"))
+         
+         
+         
+head(dfclean3)         
+(dfclean4)
+
+
+```
+
+
+### Use Tidyr to make Wide to Long format dataframe again
+
+
+```{r}
+
+dfnew3 <- gather(dfclean3,"Age_group","tot_debt",2:7)
+
+dfnew4 <- gather(dfclean4,"Age_group","amount_borrowed",2:7)
+
+
+         
+head(dfnew3)
+head(dfnew4)
+
+         
+```
+
+### Plots of Total debt by Age groups & by Product Types and Age groups
+
+
+```{r}
+library(basicTrendline)
+
+
+p3 <- ggplot(dfnew3, aes(x=quarter,y=tot_debt,fill=Age_group)) + geom_bar(stat = "identity")+
+      xlab("Year") + ylab("Amount Owed in $ Trillions") +
+      ggtitle("Total Debt Balance by Age") +  
+      theme_excel()
+             
+p3 <- p3+theme(axis.text = element_text(size = 10,angle =90, hjust = 1))+theme(legend.position="top")
+
+p3
+
+
+# Multiple line plot
+dfnewline <- dfnew3
+p3b <- ggplot(dfnewline , aes(x = quarter, y = tot_debt)) + 
+  xlab("Year") + ylab("Amount Owed in $ Trillions")+
+  ggtitle("Total Debt trendlines by Age") +
+  geom_line(aes(color = Age_group), size = 1) +
+  scale_color_manual(values = c("#00AFBB", "#E7B800","red","azure","yellow","black")) +
+   theme_excel()
+
+p3b <- p3b+theme(axis.text = element_text(size = 10,angle =90, hjust = 1))+theme(legend.position="top")
+
+
+p3b
+
+
+
+```
+
+```{r}
+dfnew4 <-dfnew4 %>% 
+         group_by(Age_group)
+
+p4 <- ggplot(dfnew4, aes(x=Age_group,y=amount_borrowed,fill=credit_type)) + geom_bar(stat = "identity")+
+      xlab("Age Groups") + ylab("Amount Owed in $Trillions") +
+      ggtitle("Debt Share by Product Type and Age (2019 Q2)") +  
+      theme_excel()
+             
+p4 <-p4+theme(axis.text = element_text(size = 10,angle =0, hjust = 0.5))+theme(legend.position="top")
+
+p4
+
+```
+
+
+### Observation 2:
+
+(1) The total amount of debt carried by Millenials is only 2nd after Gen X and Baby Boomers.  While all age groups saw a 
+
+spike in debt load at the peak of the debt bubble in 2006, debt load rate of Millenials kept increasing.  Also worrying
+
+was the increasing rates of all age groups relative to Millenials.  The Millenials is the youngest age group to
+
+allow its debt load to increased while surprisingly enough, Gen Z which was the youngest to have kept its debt load
+
+relatively flat post the great recession of 2006.
+
+
+(2)  The latest breakdown in debt load as of Q2 2019 showed the following:
+
+-  Millenials was the 2nd most indebted age group after Gen X with the bulk in mortgages followed by Student loans, Auto
+
+and Credit Card debts
+
+- Perhaps the bright spot was that Gen Z is the lowest debt carrying age group across all debt products.
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+```{r}
+
+url5 <- 'https://raw.githubusercontent.com/ssufian/Data_607/master/Tuition_Roomboard.csv'
+
+
+# Reading & Loading data
+df5 <- read.csv(file = url5 ,sep = ",", na.strings = c("NA", " ", ""), strip.white = TRUE,skip=3, stringsAsFactors = F,header=F)
+
+oldlist <- paste("V.", 1:32,sep="", collapse = NULL)
+newname <- c("institution","1986","1987","1988","1989","1990","1991","1992","1993","1994","1995","1996","1997","1998","1999",	"2000","2001","2002","2003","2004","2005","2006","2007","2008","2009","2010","2011","2012","2013","2014","2015","2016",	"2017","2018")
+
+
+df5short <- df5 %>% select(-c(V35:V37)) %>% 
+            slice(14:15)
+head(df5short)
+
+#Rename Columns
+df5clean <- df5short %>% 
+     rename_at(vars(starts_with("V")), funs(gsub(.,"V",newname))) 
+
+
+head(df5clean)
+
+# making dataset long format
+df5cleaner<- gather(df5clean,"years","tuition_fees",2:34)
+df5cleaner <- df5cleaner %>% 
+  mutate(tuition_fees=str_replace_all(tuition_fees,",",""))%<>% 
+  mutate_at(2, as.numeric)
+
+# replace $ with blank "" in the df$payment column.  and coerce that result to numeric
+df5cleaner$tuition_fees = as.numeric(gsub("\\$", "", df5cleaner$tuition_fees ))
+
+
+head(df5cleaner)
+
+```
+
+```{r}
+# Multiple line plot:  2yr and 4 yr public schools
+#dfnewline <- dfnew3
+
+p5 <- ggplot(df5cleaner , aes(x = years, y = tuition_fees)) + 
+  xlab("Year") + ylab("Tuition fees + Room & Board")+
+  ggtitle("Avg. Tuition and Fees plus Room & Board (Unweighted) in Current Dollars") +
+  geom_line(aes(color = institution), size = 1) +
+  scale_color_manual(values = c("#00AFBB", "#E7B800")) +
+   theme_excel()
+
+p5 <- p5+theme(axis.text = element_text(size = 11,angle =0, hjust = 1))+theme(legend.position="top")
+
+
+p5
+
+```
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+Observation 3:
+
+The average 2 and 4 year public instituitions (excluding private entities) in current dollars have been growing with 
+
+52%  increase just in the last decade!  This shows you the new younger generations of Gen Z and Millennials are NOT
+
+getting any breaks if they wanted to or are currently pursuing any forms of post-secondary education 
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+###  So far, we have focus on the costs or liability side of the ledger facing this Millennial generation.
+
+Let's turn our focus to the revenue side of the equation:  GDP of US economy and Unemployment rate of these generations
+
+
+```{r}
+
+url6 <- 'https://raw.githubusercontent.com/ssufian/Data_607/master/BLS_Unemployment%20SeriesReport-20191006171232_c15ff5.csv'
+
+
+# Reading & Loading data
+df6 <- read.csv(file = url6,sep = ",", na.strings = c("NA", " ", ""), strip.white = TRUE,skip=12, stringsAsFactors = F,header=F)
+
+
+df6short <- df6 %>% select(-c(V2:V5,V7:V11,V13:V17,V19:V23)) 
+ 
+
+#labeling columns "
+new_name <- c("year","under18_21","under25_34","under35_44","under45_54")
+
+
+df6shortnew <- df6short %>% 
+          rename(year="V1","under18_21"='V6', "under25_34"="V12","under35_44"="V18","under45_54"="V24")
+         
+
+head(df6shortnew )
+           
+```
+
+```{r}
+# making dataset long format
+df6cleaner<- gather(df6shortnew ,"Age_group","unemployment_rate",2:5)
+
+head(df6cleaner)
+
+```
+
+```{r}
+# Multiple line plot:  Unemployment rate of various age groups
+
+
+df6cleaner <- df6cleaner %>% 
+              group_by(year)
+
+p6 <- ggplot(df6cleaner , aes(x = year, y = unemployment_rate)) + 
+  xlab("Year") + ylab("% Unemployment Rate ")+
+  ggtitle("Umemployment rate; various age groups") +
+  geom_line(aes(color = Age_group), size = 1) +
+  scale_color_manual(values = c("#00AFBB", "#E7B800","black","red")) +
+   theme_excel()
+
+p6 <- p6+theme(axis.text = element_text(size = 11,angle =0, hjust = 1))+theme(legend.position="top")
+
+
+p6
+
+```
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+Observation 4:
+
+The good news is unemployment rate of the Millennials has been trending downward since the great recession, its currently
+
+less than 5%.  By the same token, Gen X and beyond are also seeing very good unemployment numbers; all under 5%. Of note,
+
+the older you are, the better off you are as measured by unemployment rate.  However, the worrying sign is Gen Z is
+
+still seeing some elevated numbers, hovering around 12%.  But over all, all groups are seeing a down shift which is a
+
+ of today's general economic strength, which is a topic we will delve into next to finish off this discussion.
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+### The GDP story since the Great Recession
+
+
+```{r}
+
+
+url7 <- 'https://raw.githubusercontent.com/ssufian/Data_607/master/GDP.csv'
+
+
+# Reading & Loading data
+df7 <- read.csv(file = url7,sep = ",", na.strings = c("NA", " ", ""), strip.white = TRUE,skip=3, stringsAsFactors = F,header=T)
+
+
+df7short <- df7 %>% select(-c(Country.Code,Indicator.Name,Indicator.Code,X1960)) 
+ 
+
+#labeling columns "
+
+
+df7shortnew <- df7short %>% 
+            rename_at(vars(starts_with("X")), funs(str_replace(., "X", "")))
+         
+
+```
+
+```{r}
+
+# making dataset long format
+df7cleaner<- gather(df7shortnew,"year","N_GDP",2:59) %>% 
+             filter(Country.Name == 'United States')%<>% 
+             mutate_at(2, as.numeric)
+
+head(df7cleaner)
+
+```
+
+```{r}
+# Trend line plot:  US GDP since 1961
+
+
+df7cleaner <- df7cleaner %>% 
+              group_by(year) %>% 
+              filter(year >=2000)
+
+p7 <- ggplot(df7cleaner , aes(x = year, y = N_GDP) )+ 
+  xlab("Year") + ylab("% GDP ")+
+  ggtitle("GDP growth rate since Yr 2000") +
+   geom_line(aes(color = Country.Name), size = 1.3) +
+  scale_color_manual(values = c("yellow")) +
+   theme_excel()
+
+p7 <- p7+theme(axis.text = element_text(size = 11,angle =0, hjust = 1))+theme(legend.position="top")
+
+
+p7
+```
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+Observation 5:
+
+Since the Great Recession of 2008, the US economy has been growing and it wasn't till 2013 there after, that the economy
+
+clawed its way back to pre-recession state.  It has been averaging around 2% growth the last 6 years or so and in 2017,
+
+the slope turned upwards.  This upward trend is one of the biggest reason, unemployment rate in observation 4 has gone 
+
+down.  Good economic growth has reduced unemployment rate across all age groups and Millenials' downward unemployement
+
+rate  is part of that "feel good"  story. In fact, this is the classic proverbial phrase; "high tide lifts all boats".
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+Summary:
+
+The discussion started out with a blaring editorial headline: 
+
+### "Why Millennials Are The Most Screwed Generation Of All Time" 
+
+But after looking at the "check book" of the Millennial generation from both sides;  Liabilities vs. Revenue (GDP &
+
+Unemployment rate), we are now able to answer this question without biases and anecdotes.  These are the facts:
+
+-  Yes, Millennials are much in debt with the highest dollar student loan amount across all age groups
+
+-  Yes, Millennials, along with Gen Z are the highest number of borrowers of student loan across all age groups
+
+-  Yes, Millennials, along with all the other age groups are still incurring more total debt post recession
+
+-  Yes, Public 2 & 4 year college tuition plus room & board fees are increasing with a whopping 52% increase in just 
+
+   the last decade
+   
+-  Yes, Unemployment rate across all age groups is decreasing along with a positive GDP growth in the last 6 years
+
+
+With all these statistics in the backdrop, Its an open secret that we are a nation of debtors.  Millennials is just one
+
+of the many. Millennials are certainly up against a lot of challenges with a huge debt overhang.  But Millennials are NOT
+
+the only generation facing this dilemma.  In fact, all the generations across ages are facing their own challenges with
+
+debts on their backs.  The question then becomes how much debt becomes deterimental to personal growth.  That is, if one
+
+was to take on more debt, will there be enough earnings derived from a better economic future to offset this debt burden?
+
+Since all age groups are "screwed" at a certain level because of their debt load, the real issue is then will there be
+
+enough of a career path to pay off all these debts.  So the headline should then read something to this effect:  
+
+### "Are there enough economic growth across industries to help erase all the personal debts of our generation?"
+
+
+
+

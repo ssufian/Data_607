@@ -76,21 +76,22 @@ This exericise performs a few data wrangling, cleaning and staging to get it rea
 
 \clearpage
 
+### Load all the libraries 
 
-
-```{r setup, include=FALSE}
-
+```{r }
 # Load necessary libraries
 require(ggthemes)
-library(janitor)
-library(zoo)
 library(tidyverse)
 library(magrittr)
 library(stringr)
-library(DT)
 library(tidyr)
 library(dplyr)
 library(reshape2)
+```
+
+### Load the data from Github
+
+```{r }
 
 url <- 'https://raw.githubusercontent.com/ssufian/Data_607/master/NYC_airquality%20(1).csv'
 
@@ -132,7 +133,6 @@ head(df1)
 
 ```
 
-```
 
 ### Detecting climate variable outliers
 
@@ -146,17 +146,8 @@ data. For instance, Quantile Capping Method was used to detect the outliers(Math
 variable 
 
 
-```
-
-
-
-
-
-
 
 ```{r}
-
-
 
 #This function detects Outliers by quantile capping method
 outdetect <- function(c,w=1.5)
@@ -247,6 +238,9 @@ my_string <- "Wind Outliers:"
 print(my_string, quote = FALSE)
 outdetect(Wind_dat$climate_value)
 ```
+
+
+
 ```{r}
 my_string <- "Temp Outliers:"
 print(my_string, quote = FALSE)
@@ -341,9 +335,9 @@ Viz(Ozone_T)
 
 ### Q-Q Plot
 
-After shifting the values and logging it, Ozone is now more normally distributed; its definitely a step in the right
+After shifting the values and logging it, Ozone is now more normally distributed; its
 
-direction
+definitely a step in the right direction
 
 ```{r}
 
@@ -359,9 +353,11 @@ qqline(Ozone_T , col = 2)
 
 ### Q-Q Plot - Ozone
 
-The after Q-Q plot showed a more normal distribution set than before, especially at the left tail end.  However, the 
+The after Q-Q plot showed a more normal distribution set than before, especially at the left
 
-middle can be further improved for sure, and that is left for future exercise
+tail end.  However, the middle can be further improved for sure, and that is left for future
+
+exercise
 
 --------------------------------------------------------------------------------
 
@@ -394,21 +390,27 @@ check <- abs(Solar_dat$climate_value)^2
 Solar_T <- (check)
 
 Viz(Solar_T)
-```
-```{r}
+
 par(mfrow=c(1,2))
 qqnorm(Solar_dat$climate_value,pch=16,main="Before Transformation",xlab="Sample quantiles of Solar Radiation",ylab="Theoretical quantiles")
 qqline(Solar_dat$climate_value, col = 2)
 qqnorm(Solar_T ,pch=16,main="After Transformation",xlab="Sample quantiles of Solar Radiation",ylab="Theoretical quantiles")
 qqline(Solar_T , col = 2)
 
+
+```
+
 ```
 
 ### Q-Q Plot - Solar Radiation
 
-The after Q-Q plot showed a more normal distribution set than before, especially the middle portion is above the 45
+The after Q-Q plot showed a more normal distribution set than before, especially the middle
 
-degree line.  However again like Ozone, the left can be improved further, and that is left for future exercise
+portion is above the 45
+
+degree line.  However again like Ozone, the left can be improved further, and that is left for
+
+future exercise
 
 --------------------------------------------------------------------------------
 
@@ -417,20 +419,32 @@ degree line.  However again like Ozone, the left can be improved further, and th
 ### (C)  "Wind is already Normal - Q-Q plot ascertains it, see below; no need for transformation"
 
 
+```
+
+
+
+
 ```{r}
 qqnorm(Wind_dat$climate_value ,pch=16,main="QQplot for Wind",xlab="Sample quantiles of Wind",ylab="Theoretical quantiles")
 qqline(Wind_dat$climate_value , col = 2)
-
-
 ```
+
+
+
 ```{r}
-shapiro.test(Wind_dat$climate_value) #Shapiro test for normality; making sure its really normal!
+
+
+shapiro.test(Wind_dat$climate_value) #Shapiro test for normality; making sure its really normal
+```
+
 ```
 
 ### Shapiro Wilk test to make sure Wind is really Normal
 
 Because P-value is greater than 0.05, we can be 95% confident that Wind data is normal for sure
 
+
+```
 --------------------------------------------------------------------------------
 
 \clearpag
@@ -479,23 +493,27 @@ Because P-value is greater than 0.05, we can be 95% confident that Temperature d
 
 ### Summary:
 
-This was a short exercise to use an alternative "Wide to Long" method using the reshape2 libraries; melt and dcast.
+This was a short exercise to use an alternative "Wide to Long" method using the reshape2
 
-The methodologies are very similar if one has multiple columns to compress into.  The 2nd half of the exercise is 
+libraries; melt and dcast.  The methodologies are very similar if one has multiple columns to
 
-a quick statistical take on how to view the data from a statistical stand point and perform some very standard data
+compress into.  The 2nd half of the exercise is a quick statistical take on how to view the
 
-cleansing procedures such as data imputations of NAs, outlier detections using a capping method and some data 
+data from a statistical stand point and perform some very standard data cleansing procedures
 
-transformations.  It was found through these sort of exercise that one can see how much more cleaning certain 
+such as data imputations of NAs, outlier detections using a capping method and some data
 
-variables needed.  For example, Ozone and Solar Radiation had more cleanning to do even after outlier capping and 
+transformations.  It was found through these sort of exercise that one can see how much more
 
-data transformations.  The reason could be that simply filling in NAs with zeros may not have been such a good 
+cleaning certain variables needed.  For example, Ozone and Solar Radiation had more cleanning
 
-idea but another method of using mean or even percentile of the original data could've been better.  However, the 
+to do even after outlier capping and data transformations.  The reason could be that simply
 
-point of this exercise is to learn the data one has and go through an iterative process to clean it and stage it
+filling in NAs with zeros may not have been such a good idea but another method of using mean
 
-for further analysis.  
+or even percentile of the original data could've been better.  However, the point of this
+
+exercise is to learn the data one has and go through an iterative process to clean it and stage
+
+it for further analysis.  
 

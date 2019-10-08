@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
--<bookstore>
+<bookstore>
 
 
--<book category="Data Science">
+<book category="Data Science">
 
 <title lang="en">Hands-On Programing with R</title>
 
@@ -16,7 +16,7 @@
 </book>
 
 
--<book category="Data Science">
+<book category="Data Science">
 
 <title lang="en">Data Science for Business</title>
 
@@ -31,7 +31,7 @@
 </book>
 
 
--<book category="Data Science">
+<book category="Data Science">
 
 <title lang="en">R for Data Science</title>
 
@@ -46,7 +46,7 @@
 </book>
 
 
--<book category="Data Science">
+<book category="Data Science">
 
 <title lang="en">R Markdown: The Definitive Guide</title>
 

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<books>
+
+  <book category="Data Science">
+    <title lang="en">Hands-On Programming with R:</title>
+    <author>Garrett Grolemund/author>
+    <year>Jun 13, 2014 </year>
+    <publishing date>O'Reilly Media, Inc.</publishing date>
+  </book>
+
+  <book category="Data Science">
+    <title lang="en">Data Science for Business</title>
+    <author>Foster Provost</author>
+    <author>Tom Fawcett<</author>
+    <year>August 2013</year>
+    <publishing date>O'Reilly Media, Inc.</publishing date>
+  </book>
+
+  <book category="Data Science<">
+    <title lang="en">R for Data Science<</title>
+    <author>Garrett Grolemund/author>
+    <author>Hadley Wickham<</author>
+    <year>Dec 12, 2016</year>
+    <publishing date>O'Reilly Media, Inc.</publishing date>
+  </book>
+
+  <book category="Data Science">
+    <title lang="en">R Markdown: The Definitive Guide</title>
+    <author>Yihui Xie</author>
+    <author>J.J. Allaire</author>
+    <author>Garrett Grolemund/author>
+    <year>Jul 27, 2018</year>
+    <publishing date>CRC Press</publishing date>
+  </book>
+
+</books>

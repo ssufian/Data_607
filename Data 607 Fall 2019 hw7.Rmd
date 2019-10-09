@@ -1,0 +1,115 @@
+---
+title: "Data 607 HW 7"
+author: "Sufian"
+date: "10/7/2019"
+output: html_document
+---
+
+Rpub link:
+
+
+http://rpubs.com/ssufian/537135
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load all the necessary libraries
+
+
+```{r message=FALSE, warning=FALSE}
+
+# Load necessary libraries
+
+library(dplyr)
+library(XML)
+library(RCurl)
+library(xml2)
+library(knitr)
+library(kableExtra)
+
+```
+
+## HTML file
+
+
+```{r }
+
+# Assign to `url`
+url <- "https://raw.githubusercontent.com/ssufian/Data_607/master/Data_607_Books.html"
+
+# Get the data
+urldata <- getURL(url)
+
+# Read the HTML table
+bookdata_html <- readHTMLTable(urldata,
+                      stringsAsFactors = FALSE)
+
+#class(bookdata_html) # check to see what type is it and then convert to dataframe 
+
+df1 <- data.frame(Reduce(rbind, bookdata_html))
+
+kable(df1)
+```
+
+## XML File (a):  using xmlApply 
+
+
+```{r}
+
+url <- "https://raw.githubusercontent.com/ssufian/Data_607/master/books1.xml"
+
+r <- getURL(url)
+doc <- xmlTreeParse(r, useInternal=TRUE)
+root = xmlRoot(doc)
+
+commons = xmlSApply(root, function(x)xmlSApply(x,xmlValue))
+
+books1_df <- as.data.frame(t(commons),row.names=NULL)
+
+kable(books1_df)
+
+```
+
+
+
+### XML File (b):  A dplyr alternative 
+
+
+`
+```{r}
+xml_hw <- getURLContent("https://raw.githubusercontent.com/ssufian/Data_607/master/books1.xml")
+xml_df <- xml_hw %>%
+  xmlParse() %>%
+  xmlToDataFrame()
+kable(xml_df)
+```
+
+
+### Json file
+
+
+
+
+```{r}
+
+library(rjson)
+
+json_hw <- getURLContent("https://raw.githubusercontent.com/ssufian/Data_607/master/books2.json")
+json_df <- fromJSON(json_hw)
+json_df <- do.call("rbind", lapply(json_df$`favorite books`, data.frame, stringsAsFactors = F))
+
+kable(json_df)
+
+```
+
+
+### Summmary
+
+
+- The HTML and xML is the same in the sense that it stores the multiple authors in one line.  However, JSON stores in
+
+separate lines
+
+

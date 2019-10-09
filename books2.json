@@ -1,0 +1,33 @@
+{"favorite books":[
+	{
+	"Book Title": "Hands-On Programing with R",
+	"Authors": "Garret Grolemund",	
+	"category": "Data Science",
+	"year": 2014
+        "publisher": "O'Reilly Media, Inc."
+	},
+	{
+	"Book Title": "Data Science for Business",
+	"Authors": ["Foster Provost","Tom Fawcett"],
+        "category": "Data Science",
+	"year": 2013
+        "publisher": "O'Reilly Media, Inc."
+	},
+	{
+	"Book Title": "R for Data Science" ,
+	"Authors": ["Garret Grolemund", "Hadley Wickham"],
+	
+        "category": "Data Science",
+	"year": 2013
+        "publisher": "O'Reilly Media, Inc."
+	}
+	{
+	"Book Title": "R Markdown: The Definitive Guide" ,
+	"Authors": ["Yihui Xie", "J.J. Allaire","Garret Grolemund"],
+	
+        "category": "Data Science",
+	"year": 2018
+        "publisher": "CRC Press"
+	}
+	]
+}

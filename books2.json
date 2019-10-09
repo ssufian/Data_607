@@ -3,14 +3,14 @@
 	"Book Title": "Hands-On Programing with R",
 	"Authors": "Garret Grolemund",	
 	"category": "Data Science",
-	"year": 2014
+	"year": 2014,
         "publisher": "O'Reilly Media, Inc."
 	},
 	{
 	"Book Title": "Data Science for Business",
 	"Authors": ["Foster Provost","Tom Fawcett"],
         "category": "Data Science",
-	"year": 2013
+	"year": 2013,
         "publisher": "O'Reilly Media, Inc."
 	},
 	{
@@ -18,7 +18,7 @@
 	"Authors": ["Garret Grolemund", "Hadley Wickham"],
 	
         "category": "Data Science",
-	"year": 2013
+	"year": 2013,
         "publisher": "O'Reilly Media, Inc."
 	},
 	{
@@ -26,8 +26,8 @@
 	"Authors": ["Yihui Xie", "J.J. Allaire","Garret Grolemund"],
 	
         "category": "Data Science",
-	"year": 2018
+	"year": 2018,
         "publisher": "CRC Press"
-	}
-	]
+	}]
+	
 }

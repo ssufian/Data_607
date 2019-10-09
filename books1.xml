@@ -1,65 +1,46 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--favorite books-->
+<books>
 
-<bookstore>
+	<book>		
+		<book_title>Hands-On Programing with R</book_title>
+		<authors>
+			<author ID="1">Garret Grolemund</author>
+		</authors>
+		<category>Data Science</category>
+		<year>2014</year>
+                <publisher>O'Reilly Media, Inc.</publisher>
+	</book>		
+	<book>		
+		<book_title>Data Science for Business</book_title>
+		<authors>
+			<author ID="1">Foster Provost</author>
+			<author ID="2">Tom Fawcett</author>
+		</authors>
+		<category>Data Science</category>
+		<year>2013</year>
+                <publisher>O'Reilly Media, Inc.</publisher>
+	</book>	
+        <book>
+		<book_title>R for Data Science</book_title>
+		<authors>
+			<author ID="1">Garrett Grolemund</author>
+			<author ID="2">Hadley Wickham</author>
+		</authors>
+		<category>Data Science</category>
+		<year>2016</year>
+                <publisher>O'Reilly Media, Inc.</publisher>
+	</book>
+        <book>
+		<book_title>R Markdown: The Definitive Guide</book_title>
+		<authors>
+			<author ID="1">Yihui Xie</author>
+			<author ID="2">J.J. Allaire</author>
+			<author ID="3">Garret Grolemund</author>
+		</authors>
+		<category>Data Science</category>
+		<year>2018</year>
+                <publisher>CRC Press</publisher>
+	</book>	
+</books>
 
-
-<book category="Data Science">
-
-<title lang="en">Hands-On Programing with R</title>
-
-<author>Garret Grolemund</author>
-
-<year>2014</year>
-
-<publisher>O'Reilly Media, Inc.</publisher>
-
-</book>
-
-
-<book category="Data Science">
-
-<title lang="en">Data Science for Business</title>
-
-<author>J Foster Provost</author>
-
-<author>J Tom Fawcett</author>
-
-<year>2013</year>
-
-<publisher>O'Reilly Media, Inc.</publisher>
-
-</book>
-
-
-<book category="Data Science">
-
-<title lang="en">R for Data Science</title>
-
-<author>Garrett Grolemund</author>
-
-<author>Hadley Wickham</author>
-
-<year>2016</year>
-
-<publisher>O'Reilly Media, Inc.</publisher>
-
-</book>
-
-
-<book category="Data Science">
-
-<title lang="en">R Markdown: The Definitive Guide</title>
-
-<author>Yihui Xie</author>
-
-<author>J.J. Allaire</author>
-
-<author>Garret Grolemund</author>
-
-<year>2018</year>
-
-<publisher>CRC Press</publisher>
-
-</book>
-
-</bookstore>

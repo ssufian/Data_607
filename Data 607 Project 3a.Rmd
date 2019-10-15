@@ -1,0 +1,119 @@
+---
+title: "Project 3 - Web Scrapping Monstercom"
+author: "Sufian"
+date: "10/11/2019"
+output: html_document
+---
+
+Rpub link:
+
+http://rpubs.com/ssufian/539224
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load libraries
+
+
+```{r message=FALSE, warning=FALSE}
+
+# Load packages
+library(rvest)
+library(stringr)
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+library(xml2)
+library(httr)
+
+
+```
+
+## Going into Monster.com
+
+
+```{r }
+
+# Base URL just to get to main job page to get job postings to extract: job title, companies, locations
+BASE_URL <- 'https://www.monster.com/jobs/search?q=Data-Scientist&intcid=skr_navigation_nhpso_searchMain&jobid'
+             
+```
+
+## Data Acquisition 
+
+- Scrape the details
+
+- Get Full Summary
+
+These next few steps will result in a csv file that will be merged with my teammates other scrapped files 
+
+(of other job sites)
+
+```{r}
+
+# reading in URL
+page <- read_html(BASE_URL)
+
+#get the job title
+job_title <- page %>% 
+      html_nodes("div") %>%
+      html_nodes("#SearchResults .title") %>% 
+      html_text() %>% 
+      gsub("[\r\n]", "", .) %>% 
+      trimws -> job_title
+
+
+#get the company name
+company_name <- page %>% 
+      html_nodes("div")%>% 
+      html_nodes(".company .name")%>% 
+       html_text() %>%
+       trimws -> company_name
+    
+  
+#get job location
+job_location <- page %>% 
+      html_nodes("div")%>% 
+      html_nodes(".location .name")%>% 
+       html_text() %>%
+       trimws -> job_location
+
+#get jobs url in order to scrape job details
+#get the  sumary
+href_links <- page%>% 
+      html_nodes("div") %>% 
+      html_nodes("#SearchResults a")%>%
+      html_attr("href") 
+  
+## create a variable to hold the full description
+desc_full <- c() 
+k <- 1
+for(i in href_links) {
+
+  try({
+	desc_full[[k]] <- read_html(i) %>%
+	html_nodes("div") %>% 
+	html_nodes("#JobDescription") %>%
+	html_text() %>%
+	str_squish()
+	   # gsub("[\r\n]", "", .)# %>% 
+       #trimws -> test
+  })
+	k <- k + 1
+}
+
+final <- tibble("job_title"=job_title, "hiring_companies"=company_name,"location"=job_location ,"salary"=NA,"job_url"=href_links,"job_description"=desc_full )
+
+
+# writing a csv file with all the scrapped details
+
+write.csv(final, file = "monsterjobs.csv", row.names = FALSE)
+
+```
+
+
+
+
+

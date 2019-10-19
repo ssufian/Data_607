@@ -1,0 +1,456 @@
+title: "Project 3b - Data Analysis and Visualizations"
+
+author: "Sufian"
+
+date: "10/16/2019"
+
+output: html_document
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+Rpub links:
+
+http://rpubs.com/ssufian/540742
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r message=FALSE, warning=FALSE}
+# Load packages
+library(rvest)
+library(stringr)
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+library(xml2)
+library(httr)
+library("tm")
+library("SnowballC")
+library("wordcloud")
+library("RColorBrewer")
+library(tidytext)
+library("magrittr")
+require(ggthemes)
+library('sentimentr')
+```
+
+## Reading each teammates' job site scrapped job listings
+
+```{r}
+#read from Leticia
+ltcancel<-read.csv("https://raw.githubusercontent.com/ltcancel/Project3/master/SimplyHiredJobs.csv",stringsAsFactors = FALSE)
+colnames(ltcancel)<-c("Position", "Company","Location","Salary","URL","Job_Description")
+#read from Salma
+selshahawy<-read.csv("https://raw.githubusercontent.com/salma71/MSDS_2019/master/Fall2019/aquisition_management_607/project_3/jobs_detailsInfo.csv", stringsAsFactors = FALSE) 
+colnames(selshahawy)<-c("Position", "Company","Location","URL","Job_Description") 
+#read from Sufian
+ssufian<-read.csv("https://raw.githubusercontent.com/Luz917/data607project3_ssufian_monster_jobs/master/monsterjobs.csv", stringsAsFactors = FALSE) 
+colnames(ssufian)<-c("Position", "Company","Location","Salary","URL","Job_Description")  
+```
+
+### Merging all scrapped files into one
+
+
+```{r }
+twocsv<-merge(ltcancel,selshahawy,all= TRUE)
+allcsv<-merge(twocsv,ssufian, all=TRUE)
+```
+
+### Deleting unnecessary columns
+
+```{r}
+library("magrittr")
+# REmove Salary column
+clean_allcsv <- allcsv[,-c(4,6)]
+```
+
+### TF-IDF Analysis
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+TF-IDF (term frequency-inverse document frequency) is a metric that represents how ‘important’ a word is to a
+
+document in the document set.  It works by increasing proportionally to the number of times a word appears in a
+
+document, but is offset by the number of documents that contain the word. So, words that are common in every
+
+document, such as "this", "what", "and" "if", rank low even though they may appear many times, since they don’t
+
+mean much to that document in particular.
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+- Creating a list of how to remove and streamline the corpus: removing stopwords, lower case for simplicity
+
+and removing punctuations
+
+```{r}
+#tfidf <- clean_allcsv1
+tfidf <- clean_allcsv
+# Control list to be used for all corpuses
+control_list <- list(removePunctuation = TRUE, stopwords = TRUE, tolower = TRUE,
+                     weighting = weightTfIdf)
+colnames(tfidf)
+```
+
+### Text Mining (tm) Package 
+
+(1) The text is loaded using Corpus() function from text mining (tm) package. Corpus is a list of a document (in
+
+our case, we only have one document; the column of detailed Job Descriptions).
+
+(2) In this exercise, we load the data as txt file, i.e., tfidf$Job_Description as a corpus.
+
+(3) We then build a term-document matrix which is a Document matrix of table containing the frequency of the
+
+words. Column names are words and row names are documents. The function TermDocumentMatrix() from text mining
+
+package is the constructor
+
+(4) Notice we passed in the argument of our control list 
+
+
+```{r}
+# TF-IDF Based on the 3 job postings
+corpus.all <- VCorpus(VectorSource(tfidf$Job_Description))
+dtm.all <- DocumentTermMatrix(corpus.all,control = control_list)
+dtm.all
+```
+
+### Inspecting the Term Document Matrix
+
+- You will see that there's great amount of sparsity
+
+- You will also observe that its using the tf-idf factors to normalize the words
+
+```{r}
+tdm.all <- TermDocumentMatrix(corpus.all,control = control_list)
+inspect(tdm.all)
+```
+
+###  Dealing with Sparcity 
+
+- Term-document matrices tend to get very big already for normal sized data sets. Therefore we remove sparse
+
+terms, i.e., terms occurring only in very few documents. And this reduces the matrix dramatically without losing
+
+signiﬁcant relations inherent to the matrix
+
+- In our case, we removed about 60% of sparcity (i.e., terms occurring 0 times or outlier in a document) elements.
+
+- What percentage to utilized is a matter of trial and errors, we played with ranges between 0.4 to 0.8 and
+
+finally settled to 0.6 to get a "good" balance
+
+
+```{r}
+# Remove outliers consisting of very rare terms - infrequent words outlairs
+tdms.60 <- removeSparseTerms(tdm.all, sparse = 0.60)
+inspect(tdms.60)
+```
+
+```{r}
+# explore the data
+# The data reduction techniques used singular value decomposition reduces the number of columns (documents) but keeps the number of rows (words).
+count <- rowSums(as.matrix(tdms.60))
+
+count <- sort(rowSums(as.matrix(tdms.60)), decreasing=TRUE)   
+head(count, 14)
+```
+
+```{r}
+df_all <- data.frame(words=names(count), count=count)   
+head(df_all)
+```
+
+### Setting up TF-IDF graph
+
+```{r}
+# Graph of TF-IDF in the 3 job postings
+ggplot(head(df_all,25), aes(reorder(words, count), count)) +  # head because I desc the order 
+  geom_bar(stat = "identity", fill = "blue") +
+  labs(title = "TF-IDF analysis based on TermDocumentMatrix",
+       subtitle = "Analysis based on three job postings sites",
+       x = "Words", y = "Frequency") +
+  coord_flip()
+```
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+Observation 1a:
+
+Through the TF-IDF process, words such as machine, learning, business, analytics, research, statistics and the
+
+likes were found to be top of the importance list.  Not surprisingly, these are the buzz words of today that are
+
+associated with the data scientist roles.  
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+### Generate the Word cloud
+
+The important key skill sets can be illustrated in a word cloud as follow
+
+- The tm_map() function is used to remove unnecessary white space, to convert the text to lower case, to remove
+
+common stopwords like ‘the’, “we”. Stopwords has nearly no value at all and is removed for further analysis
+
+
+```{r}
+## here we wanted to plot word cloud to get the most used words regarding to TDF 
+word_cloud <- tm_map(corpus.all, removeWords, c("services", "data", "andor", "ability", "using", "new", "science", "scientist" , "you", "must", "will", "including", "can", stopwords('english')))
+
+```
+
+```{r}
+wordcloud(names(count), 
+          count,
+          max.words = 80, 
+          random.order = FALSE, 
+          scale=c(2.5,.4),
+          random.color = FALSE,
+          colors=palette())
+```
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+Observation 1b:
+
+Another graphical way to show importance of words is through the word cloud and again to no one's surprise words
+
+like machine, learning, models, analytics came out glaringly clear against the other buzz words.  
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+### Explore frequent terms and their associations
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+### Frequency of words in Job Listings 
+
+Our goal was to find the most valued data science skills using a frequency-of-occurance approach. We created new
+
+variables for analyzing three types of skills (hard skills, soft skills, and tool skills) most commonly associated
+
+with the data scientist role within the job summaries as advertised in the various job web sites.
+
+
+###  Frequency of Technical Skills
+
+- Technical tool Skills:
+
+We used the mutate function to create new variables for the tool skills category and preserve existing variables
+
+from the summary column, and turned on case insensitivity.
+
+
+```{r}
+toolskills <- clean_allcsv %>%
+    mutate(R = grepl("\\bR\\b,", Job_Description, ignore.case=TRUE)) %>%
+    mutate(python = grepl("Python", Job_Description, ignore.case=TRUE)) %>%
+    mutate(SQL = grepl("SQL", Job_Description, ignore.case=TRUE)) %>%
+    mutate(hadoop = grepl("hadoop", Job_Description, ignore.case=TRUE)) %>%
+    mutate(perl = grepl("perl", Job_Description, ignore.case=TRUE)) %>%
+    mutate(matplotlib = grepl("matplotlib", Job_Description, ignore.case=TRUE)) %>%
+    mutate(Cplusplus = grepl("C++", Job_Description, fixed=TRUE)) %>%
+    mutate(VB = grepl("VB", Job_Description, ignore.case=TRUE)) %>%
+    mutate(java = grepl("java\\b", Job_Description, ignore.case=TRUE)) %>%
+    mutate(scala = grepl("scala", Job_Description, ignore.case=TRUE)) %>%
+    mutate(tensorflow = grepl("tensorflow",Job_Description, ignore.case=TRUE)) %>%
+    mutate(javascript = grepl("javascript", Job_Description, ignore.case=TRUE)) %>%
+    mutate(spark = grepl("spark", Job_Description, ignore.case=TRUE)) %>%
+    mutate(java = grepl("java", Job_Description, ignore.case=TRUE)) %>%
+    select(
+      Position, 
+      Company, 
+      R, 
+      python, 
+      SQL, 
+      hadoop, 
+      perl, 
+      matplotlib, 
+      Cplusplus, 
+      VB, 
+      java, 
+      scala, 
+      tensorflow, 
+      javascript,
+      spark,
+      java)
+```
+
+### Setup tool skills for plotting
+
+```{r}
+toolskills2 <- toolskills %>% select(-(1:2)) %>% summarise_all(sum) %>% gather(variable,value) %>% arrange(desc(value))
+```
+
+### Visualized the most in-demand technical on-the-job tool sKills:
+
+```{r}
+ggplot(toolskills2,aes(x=reorder(variable, value), y=value)) + geom_bar(stat='identity',fill="green",color="black") + xlab('') + ylab('Frequency') + labs(title='Tool Skills') + coord_flip() + theme_minimal()
+```
+
+### Frequency of Hard skills
+
+- We repeated the process again here to isolate hard skills most sought after by hiring companies
+
+
+```{r}
+hardskills <- clean_allcsv %>%
+    mutate(machinelearning = grepl("machine learning", Job_Description, ignore.case=TRUE)) %>%
+    mutate(modeling = grepl("model", Job_Description, ignore.case=TRUE)) %>%
+    mutate(statistics = grepl("statistics", Job_Description, ignore.case=TRUE)) %>%
+    mutate(programming = grepl("programming", Job_Description, ignore.case=TRUE)) %>%
+    mutate(quantitative = grepl("quantitative", Job_Description, ignore.case=TRUE)) %>%
+    mutate(debugging = grepl("debugging", Job_Description, ignore.case=TRUE)) %>%
+    mutate(statistical = grepl("statistical",  Job_Description, ignore.case=TRUE)) %>%
+    mutate(regression = grepl("regression",  Job_Description, ignore.case=TRUE)) %>%
+  
+select(Position, Company, machinelearning, modeling, statistics, programming, quantitative, debugging, statistical, regression)
+```
+
+### Setup hard skills for plotting
+
+```{r}
+
+hardskills2 <- hardskills %>% 
+               select(-(1:2)) %>% 
+               summarise_all(sum) %>% 
+               gather(variable,value) %>% 
+               arrange(desc(value))
+```
+
+### Visualized the most in-demand hard sKills:
+
+```{r}
+ggplot(hardskills2,aes(x=reorder(variable, value), y=value)) + 
+  geom_bar(stat='identity',fill="yellow",color="black") + 
+  xlab('') + 
+  ylab('Frequency') + 
+  labs(title='Hard Skills') + 
+  coord_flip() + 
+  theme_minimal()
+```
+
+### Frequency of Soft skills
+
+- Lastly, We repeated the process to get the soft skills most sought after by hiring companies
+
+```{r}
+softskills <- clean_allcsv %>%
+    mutate(workingremote = grepl("working remote", Job_Description, ignore.case=TRUE)) %>% 
+    mutate(communication = grepl("communication", Job_Description, ignore.case=TRUE)) %>%
+    mutate(collaborative = grepl("collaborate", Job_Description, ignore.case=TRUE)) %>%
+    mutate(creative = grepl("creative", Job_Description, ignore.case=TRUE)) %>%
+    mutate(critical = grepl("critical", Job_Description, ignore.case=TRUE)) %>%
+    mutate(problemsolving = grepl("problem solving", Job_Description, ignore.case=TRUE)) %>%
+    mutate(activelearning = grepl("active learning", Job_Description, ignore.case=TRUE)) %>%
+    mutate(hypothesis = grepl("hypothesis", Job_Description, ignore.case=TRUE)) %>%
+    mutate(organized = grepl("organize", Job_Description, ignore.case=TRUE)) %>%
+    mutate(judgement = grepl("judgement", Job_Description, ignore.case=TRUE)) %>%
+    mutate(selfstarter = grepl("self Starter", Job_Description, ignore.case=TRUE)) %>%
+    mutate(interpersonalskills = grepl("interpersonal skills", Job_Description, ignore.case=TRUE)) %>%
+    mutate(detail_oriented = grepl("attention to detail", Job_Description, ignore.case=TRUE)) %>%
+    mutate(visualization = grepl("visualization", Job_Description, ignore.case=TRUE)) %>%
+    mutate(leadership = grepl("leadership", Job_Description, ignore.case=TRUE)) %>%
+    mutate(presentation = grepl("presentation", Job_Description, ignore.case=TRUE)) %>%
+    mutate(passion = grepl("passion", Job_Description, ignore.case=TRUE)) %>%
+    mutate(research = grepl("research", Job_Description, ignore.case=TRUE)) %>%
+    mutate(teamwork = grepl("teamwork", Job_Description, ignore.case=TRUE)) %>%
+    mutate(integrity = grepl("integrity", Job_Description, ignore.case=TRUE)) %>%
+    mutate(passionate= grepl("passionate", Job_Description, ignore.case=TRUE)) %>%
+    select(Position, Company, workingremote, communication, collaborative, creative, critical, problemsolving, 
+  activelearning, hypothesis, organized, judgement, selfstarter, interpersonalskills, detail_oriented, 
+  visualization, leadership,presentation,passion,research,teamwork,integrity,passionate)
+```
+
+
+### Setup Soft skills for plotting
+
+```{r}
+softskills2 <- softskills %>% 
+               select(-(1:2)) %>% 
+               summarise_all(sum) %>% 
+               gather(variable,value) %>% 
+               arrange(desc(value))
+```
+
+### Visualized the most in-demand soft sKills:
+
+```{r}
+ggplot(softskills2,aes(x=reorder(variable, value), y=value)) + geom_bar(stat='identity',fill="orange",color="blue") + xlab('') + ylab('Frequency') + labs(title='Soft Skills') + coord_flip() + theme_minimal()
+```
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+Observation 2:
+
+-  The top 3 technical tool skills associated with data scientist today are:  Python, R and SQL
+
+-  The top 3 hard skill sets sought by hiring managers are:  Modeling, Machine Learning and statistics
+
+-  The top soft skills that companies are looking for are:  Research, communication which is almost a tie followed
+
+by "passion".  
+
+The 3 top tool and hard skills are very much talked about in our class and the industry whereby by employers
+
+expect their new hires to know already.  The tool and hard skill sets are almost pre-requisites with soft skills
+
+as the the added bonus that hiring companies sought.  
+
+Hiring companies want their new hires to be able to do 3 things in general:
+
+(1)  The What: To utilize these tools (Python, R and SQL) on an everyday basisfor thier work.  
+
+(2) The How: While the tool knowledge is the first step, they also expect their hires to wrap it into a model with
+
+statistics.  Modeling machine learning algorithms based on sound statistics are the foundation of a skilled,
+
+competentdata scientist.  
+
+(3) The Need:  The last but not least is "people" or soft skills, the ability for doing sound research and
+
+communicating it to their peers and other business grops is key to a really successful career in data sciene.
+
+We have learned that a good technical person is only as good as his/her communication ability. The ability to
+
+convey technical findings in commmon layman terms is what separates a hire from being a great scientist to simply
+
+just an average one.
+

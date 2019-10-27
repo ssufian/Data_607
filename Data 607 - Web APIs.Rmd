@@ -1,0 +1,241 @@
+
+title: "Dat 607 HW 9 - Web APIs"
+
+author: "Sufian"
+
+date: "10/22/2019"
+
+output: html_document
+
+
+Rpub links:
+
+http://rpubs.com/ssufian/543492
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Problem Statement
+
+- The New York Times web site provides a rich set of APIs, as described here: http://developer.nytimes.com/docs
+
+- You’ll need to start by signing up for an API key.
+
+- Your task is to choose one of the New York Times APIs, construct an interface in R to read in the JSON data, and
+
+transform it to an R dataframe.
+
+```{r message=FALSE, warning=FALSE}
+#Load libraries
+library(httr)
+library(jsonlite)
+library(tidyr)
+library(lubridate)
+library(rvest)
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+library("tm")
+library("SnowballC")
+library("wordcloud")
+library("RColorBrewer")
+```
+
+## Testing the GET function to see if it works
+
+```{r}
+URL <- 'https://api.nytimes.com/svc/mostpopular/v2/viewed/30.json?api-key='
+
+name <- "MfbAm3jsAPQ0UZ3kAxRGZ8SdbxcDVWQD"
+
+myurl <- (paste0(URL, name, sep=""))
+
+r <- GET(myurl)
+
+
+r
+```
+
+## Error Check
+
+```{r}
+# check for error (TRUE if above 400)
+http_error(r)
+
+```
+
+## Using Jasonlite to get articles from NY Times & Transforming into Dataframe
+
+- This first pull was to get ALL the latest articles (any) for the last 23 days:  Oct 01, 2019 to Oct 23, 2019
+
+```{r}
+r2 <- fromJSON(myurl, flatten=TRUE) %>% data.frame()
+
+head(r2)
+
+```
+
+## Peeking into the columns
+
+```{r}
+# Take a look at the columns
+colnames(r2)
+```
+
+## Check how many articles
+
+```{r}
+# The search returned 20 articles with 22 columns bc each page/request has a max of 10 articles
+dim(r2) 
+```
+
+## Make into a dataframe minus all the irrelavent columns
+
+```{r}
+# take only columns that is relevant from the data from NY times
+final <- tibble("News_Source"=r2$results.source, "Title"=r2$results.title,"Authors"=r2$results.byline ,"News_type"=r2$results.type,"News_url"=r2$results.url,"News_abstract"=r2$results.abstract
+               , "News_section"=r2$results.section)
+
+head(final)
+```
+
+## Check news sources (which ones)
+
+- Most news were from articles by 50%
+
+```{r}
+# Visualize coverage of articles by news type 
+final %>% 
+  group_by(News_type) %>%
+  summarize(count=n()) %>%
+  mutate(percent = (count / sum(count))*100) %>%
+  ggplot() +
+  geom_bar(aes(y=percent, x=News_type, fill=News_type), stat = "identity") + coord_flip()
+```
+
+##  WHich sections has most of the articles
+
+- Most news are from the US news section
+
+```{r}
+# Visualize coverage of articles covered by sections
+final %>% 
+  group_by(News_section) %>%
+  summarize(count=n()) %>%
+  mutate(percent = (count / sum(count))*100) %>%
+  ggplot() +
+  geom_bar(aes(y=percent, x=News_section, fill=News_section), stat = "identity") + coord_flip()
+```
+```{r}
+url_impeachment<- paste0("http://api.nytimes.com/svc/search/v2/articlesearch.json?q=impeachment&api-key=",name, sep="")
+impeachment1 <- GET(url_impeachment, accept_json())
+
+```
+
+## Lets try to see if the "Impeachment story" is a big deal?
+
+- Using the search and the the any article url but with the same API key
+
+
+```{r}
+
+impeachment1 <- fromJSON(url_impeachment, flatten=TRUE) %>% data.frame()
+
+
+
+# Take a look at the columns
+colnames(impeachment1)
+
+```
+
+##  Repeat the same process again to see the dimensions
+
+```{r}
+dim(impeachment1) 
+```
+
+##  Taking just the last 7 days or so to see how many articles were related to the impeachment story
+
+```{r}
+# Set some parameters to grab all the hits by identifying a date range and max page # to loop through
+term <- "impeachment" 
+begin_date <- "20191001" # YYYYMMDD
+end_date <- "20191023"
+```
+
+## Piecing the url together for the API call
+
+```{r}
+# Concatenate pieces of the url for the api call
+baseurl <- paste0("http://api.nytimes.com/svc/search/v2/articlesearch.json?q=",term,
+                  "&begin_date=",begin_date,"&end_date=",end_date,
+                  "&facet_filter=true&api-key=",name, sep="")
+```
+
+
+##  Determine the max no. of pages
+
+
+```{r}
+# Identify the # of hits to calculate the max pages 
+initialQuery <- fromJSON(baseurl)
+print(initialQuery$response$meta$hits[1]) # returns the total # of hits
+```
+
+## Looking at max pages found
+`
+```{r}
+maxPages <- ceiling((initialQuery$response$meta$hits[1] / 10) -1) # reduce by 1 because loop starts with page 0
+print(maxPages) # 88 is the max pages
+```
+
+## I had to limit the loop to only 10 pages so the connection would not timed out for illustratative purposes
+`
+```{r}
+# Loop through all pages to get all the hits
+pages <- list()
+for(i in 0:10){
+  nytSearch <- fromJSON(paste0(baseurl, "&page=", i), flatten = TRUE) %>% data.frame() 
+  message("Retrieving page ", i)
+  pages[[i+1]] <- nytSearch 
+  Sys.sleep(9) # because there are 3 previous calls in under a min and the api call limit is 10/min 
+}
+```
+```{r}
+# Row bind the page results into a big a dataframe
+impeachment_search <- rbind_pages(pages)
+
+# Take a peek at 2 informative columns. 
+head(impeachment_search , n=10)[c('response.docs.web_url', 'response.docs.snippet')]  
+
+```
+
+##  The impeachment stories/articles are mostly from News type; the impeachement coverages are virtually in News
+
+```{r}
+impeachment_search  %>% 
+  group_by(response.docs.type_of_material) %>%
+  summarize(count=n()) %>%
+  mutate(percent = (count / sum(count))*100) %>%
+  ggplot() +
+  geom_bar(aes(y=percent, x=response.docs.type_of_material, fill=response.docs.type_of_material), stat = "identity") + coord_flip()
+```
+
+```{r}
+# Visualize coverage of dreamers by section
+impeachment_search  %>% 
+  group_by(response.docs.section_name) %>%
+  summarize(count=n()) %>%
+  mutate(percent = (count / sum(count))*100) %>%
+  ggplot() +
+  geom_bar(aes(y=percent, x=response.docs.section_name, fill=response.docs.section_name), stat = "identity") + coord_flip()
+```
+
+
+##  The impeachment stories/articles are mostly from US News Sections.  Looks like the world does not really care
+
+about the impeachment stories but the US
+
+

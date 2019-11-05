@@ -1,0 +1,410 @@
+---
+title: "Project 4 - Ham or Spam"
+author: "Sufian"
+date: "10/30/2019"
+output: html_document
+---
+
+## Rpub links:  http://rpubs.com/ssufian/546815
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Project Goals
+
+The task is to create a program that can classify a text document using training documents that are
+
+already classified. Specifically the program that will classify email as ‘spam’ - unwanted email, or
+
+‘ham’ wanted email:
+
+
+```{r message=FALSE, warning=FALSE}
+
+# Load
+library("tidyverse")
+library("stringr")
+library("tm")
+library("SnowballC")
+library("wordcloud")
+library("RColorBrewer")
+library(dplyr)
+library(e1071)
+library(caTools)
+library(caret)
+library(kernlab) 
+library(rpart)
+library(plyr)
+library(class)
+library(knitr)
+
+```
+
+## The Data
+
+- Per Dr. Caitlin's directions from the video, Files of spam and ham emails were extracted from
+
+http://spamassassin.apache.org/old/publiccorpus/ 
+
+(1) 20050311_spam_2.tar.bz2 for spam data
+
+(2) 20030228_easy_ham.tar.bz2 for ham data
+
+
+## These were unpacked as follows.
+
+## Note due to the slowness of the run, I have truncated the number of files to 100 only for
+
+## illustrative Purposes only
+
+```{r }
+
+# Create Ham Dataframe
+ham_dir <- "C:/Desk top Stuff/CUNY Fall 2019 Folder/Data Acquisition/Project 4/easy_ham"
+hamFileNames <- list.files(ham_dir)
+
+nnrow <- length(hamFileNames)
+
+nt <- 100 #use only a 100 for illustrative purpose only because it will take too long
+
+# List of docs
+ham_docs_list <- list()
+for(i in 1:nt)
+{
+  filepath<-paste0(ham_dir, "/", hamFileNames[i])  
+  text <-readLines(filepath)
+  list1<- list(paste(text, collapse="\n"))
+  ham_docs_list = c(ham_docs_list,list1)
+  
+}
+
+```
+
+## Ham Data Frame Setup
+
+```{r}
+
+# ham data frame
+
+hamDF <-as.data.frame(unlist(ham_docs_list),stringsAsFactors = FALSE)
+
+#Assigning Labels "ham" to the ham dataframe
+hamDF$type <- "ham"
+names(hamDF) <- c("text","type")
+
+```
+
+## Repeat same process for Spam data now
+
+```{r}
+# Create Spam Dataframe
+spam_dir="C:/Desk top Stuff/CUNY Fall 2019 Folder/Data Acquisition/Project 4/spam_2"
+spamFileNames = list.files(spam_dir)
+
+nnrow1 <- length(spamFileNames)
+
+# List of docs
+spam_docs_list <- list()
+for(i in 1:nt)
+{
+  filepath1<-paste0(spam_dir, "/", spamFileNames[i])  
+  text1 <-readLines(filepath1)
+  list2<- list(paste(text1, collapse="\n"))
+  spam_docs_list = c(spam_docs_list,list2)
+  
+}
+```
+
+## Spam Data Frame Setup (again)
+
+```{r}
+# Spam data frame
+spamDF <-as.data.frame(unlist(spam_docs_list),stringsAsFactors = FALSE)
+
+#Assigning Labels "spam" to the spam dataframe
+spamDF$type <- "spam"
+names(spamDF) <- c("text","type")
+
+```
+
+## Combining the Spams & the Hams together into One Dataframe
+
+```{r}
+# creating combined data frame of spam and ham
+df <- rbind(hamDF, spamDF)
+
+```
+
+## Prepare the Corpus
+
+- Create email corpus from the "whole" dataframe
+
+Clean up process involves the following activities:
+
+(a) Create Corpus dataset
+
+(b) Removing numbers
+
+(c) Removing punctuation
+
+(d) Removing stopwords - remove common non-content words, like to, and, the, etc. Words with no values
+
+(e) Removing excess white space
+```{r}
+# These were needed because I had some Japanese and Chinese characters that were erroring out
+Sys.setlocale('LC_ALL','C')
+Sys.setlocale("LC_ALL", "Japanese_Japan.932")
+Sys.setlocale("LC_ALL","Japanese_Japan.20932")
+toSpace <- content_transformer(function (x , pattern ) gsub(pattern, " ", x))
+
+# Create a Corpus, then perform some cleaning up from df dataframe column (the text); tm package
+
+df3 <- df %>% 
+  filter(type=="spam")
+
+emailCorpus <- Corpus(VectorSource(df3$text)) %>% 
+  tm_map(toSpace, "/") %>% 
+  tm_map(toSpace, "@") %>% 
+  tm_map(toSpace, "\\|") %>% 
+  tm_map(PlainTextDocument) %>% 
+  tm_map(content_transformer(tolower)) %>% 
+  tm_map(removeNumbers) %>% 
+  tm_map(removePunctuation) %>% 
+  tm_map(removeWords, stopwords()) %>% 
+  tm_map(stripWhitespace)
+
+```
+
+## TDM FOR SPAM 
+
+```{r}
+# Create documen-term matrix for ham and spam emails
+# documenterm matrix is the mathematical maxtrix that describes the frequency of terms that occurs in a collection of documents
+email_dtm <- TermDocumentMatrix(emailCorpus)
+
+# Remove outliers consisting of very rare terms - infrequent words outlairs
+tdms.90 <- removeSparseTerms(email_dtm , sparse = 0.90)
+
+```
+
+
+
+```{r}
+
+m <- as.matrix(tdms.90 )
+v <- sort(rowSums(m),decreasing=TRUE)
+d <- data.frame(word = names(v),freq=v)
+head(d, 10)
+
+```
+
+## Word cloud for Spams after cleaned-up Spam only dataset
+
+```{r}
+# spam word cloud
+
+
+set.seed(1234)
+suppressWarnings(wordcloud(words = d$word, freq = d$freq, min.freq = 1,
+          max.words=200, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Dark2")))
+
+```
+
+## Creating Corpus and cleaning up for Hams now
+
+```{r}
+df4 <- df %>% 
+  filter(type=="ham")
+emailCorpus1 <- Corpus(VectorSource(df4$text)) %>% 
+  tm_map( toSpace, "/") %>% 
+  tm_map(toSpace, "@") %>% 
+  tm_map( toSpace, "\\|") %>% 
+  tm_map(PlainTextDocument) %>% 
+  tm_map(content_transformer(tolower)) %>% 
+  tm_map(removeNumbers) %>% 
+  tm_map( removePunctuation) %>% 
+  tm_map(removeWords, stopwords()) %>% 
+  tm_map(stripWhitespace)
+
+```
+
+## TDM For Ham
+
+```{r}
+email_dtm1 <- TermDocumentMatrix(emailCorpus1 )
+
+# Remove outliers consisting of very rare terms - infrequent words outlairs
+tdms1.90 <- removeSparseTerms(email_dtm1 , sparse = 0.90)
+
+```
+
+## Corpus for cleaned up Ham dataset
+
+```{r}
+m1 <- as.matrix(tdms1.90  )
+v1 <- sort(rowSums(m1),decreasing=TRUE)
+d1 <- data.frame(word = names(v1),freq=v1)
+head(d1, 10)
+
+```
+
+## Word cloud for Hams of cleaned up Ham dataset
+
+```{r}
+# Ham word cloud
+
+set.seed(1234)
+suppressWarnings(wordcloud(words = d1$word, freq = d1$freq, min.freq = 1,
+          max.words=100, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Dark2")))
+```
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+Observation 1:
+
+The wordcloud in Ham shows more meaningful words than the ones in Spams
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+## Check if The original parent dataset (not truncated one) is imbalanced or not?   
+
+```{r}
+ham_percent <- df %>% 
+  summarise(ham_percent = nnrow/sum(nnrow1+nnrow))
+
+spam_percent <- df %>% 
+  summarise(spam_percent = nnrow1/sum(nnrow1+nnrow))
+
+# Table of % split between Hams vs. Spams
+
+pie <- matrix(c(64,36),ncol=2,byrow=TRUE)
+colnames(pie) <- c("Ham","Spam")
+rownames(pie) <- c("% split")
+pie <- as.table(pie)
+pie
+
+# 3D Exploded Pie Chart
+library(plotrix)
+slices <- c(64,36)
+lbls <- c("Ham","Spam")
+pct <-round(slices/sum(slices)*100)
+lbls <- paste(lbls, pct) # add % to labels
+lbls <- paste(lbls, "%", sep="") #add % sign
+
+pie3D(slices,labels = lbls, col=rainbow(length(lbls)),main ="Pie Chart of Original datasets, w/o cutoffs:Hams vs Spams")
+      
+```
+
+## Splitting the truncated dataset:  creating training and test datasets for Naive Bayes Classifer
+
+- 80% of data is partitioned to be training
+
+- 20% of data is partitioned to be testing (hold outs)
+
+```{r}
+# Splitting the dataset into the Training set and Test set
+df$type <- factor(df$type)
+#shuffle up the dataframe again
+set.seed(42)
+rows <- sample(nrow(df))
+
+df_final <- df[rows, ]
+
+trainIndex <- createDataPartition(df_final$type, p=0.80, list=FALSE)
+
+dataTrain <- df_final[trainIndex,]
+ 
+dataTest  <- df_final[-trainIndex,]
+
+#cleaning original corpus converting and removing to improve performance of models
+cleanCorpus <- Corpus(VectorSource(df_final$text)) %>% 
+  tm_map(toSpace, "/") %>% 
+  tm_map(toSpace, "@") %>% 
+  tm_map(toSpace, "\\|") %>% 
+  tm_map(PlainTextDocument) %>% 
+  tm_map(content_transformer(tolower)) %>% 
+  tm_map(removeNumbers) %>% 
+  tm_map(removePunctuation) %>% 
+  tm_map(removeWords, stopwords()) %>% 
+  tm_map(stripWhitespace)
+
+corpus_train <- cleanCorpus[trainIndex]
+
+corpus_test <- cleanCorpus[-trainIndex]
+
+email_train <-  DocumentTermMatrix(corpus_train)
+
+email_test <-  DocumentTermMatrix(corpus_test)
+
+```
+
+## Naive Bayes classification needs present or absent info on each word in a message. 
+
+- Found this snippet of code on-line that Converts the numeric entries in the term matrices into
+
+- factors that indicate whether the term is present or not; converts count info into "Yes/No"
+
+```{r}
+# count function
+convert_count <- function(x) {
+  y <- ifelse(x > 0, 1,0)
+  y <- factor(y, levels=c(0,1), labels=c("No", "Yes"))
+  y
+}
+
+email_train <- apply(email_train , 2, convert_count)
+email_test  <- apply(email_test , 2, convert_count)
+
+
+```
+
+## Set up Classifier
+
+```{r}
+
+classifier <- naiveBayes(email_train , factor(dataTrain$type))
+
+```
+
+## Test Set Prediction & Estimating Model Accuracy thru Confusion Matrix
+
+```{r}
+
+# Predicting the Test set results
+test_pred <- predict(classifier, newdata=email_test)
+
+```
+
+## Confusion Matrix:
+
+```{r}
+confusionMatrix(test_pred, dataTest$type)
+
+```
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+Observation 2: (Note: This was only based on a small sample size for demonstrative purposes only)
+
+The Naive Bayes Classifier performed very well on the training set by achieving 97.5% overall accuracy
+
+While the model has a 95% sensitivity rate; the proportion of the positive class predicted as positive,
+
+it was able to achieve about 100% on specificity rate which is the proportion of the negative class
+
+predicted accurately
+
+--------------------------------------------------------------------------------
+
+\clearpage
+

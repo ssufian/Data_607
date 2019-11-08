@@ -1,0 +1,189 @@
+
+title: 'Discussion 11: HULU's Recommender Systems'
+
+author: "Sufian"
+
+date: "11/7/2019"
+
+output: html_document
+
+
+
+## Problem Statement:
+
+How Hulu builds its industry leading recommendation engine 
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+## **Git-Hub**
+
+
+## Rpub links:  http://rpubs.com/ssufian/547898
+
+
+--------------------------------------------------------------------------------
+
+\clearpag
+
+
+## **Scenario Design analysis**
+
+1) Who are HULU's target users?
+
+
+The average age of a Hulu subscriber is 31.Having a large portion of young people as its subscribers is
+
+an advantage for Hulu as they can retain them for a long time into the future.
+
+For a perspective, this is almost 25 years younger than the average broadcast TV viewer who is 55.
+
+Likewise, there’s an average income of $92,000 in households where Hulu is watched. In fact, 85% of U.S.
+
+millennials subscribe to OTT services.
+
+--------------------------------------------------------------------------------
+
+\clearpag
+
+2) What are HULU's key goals?
+
+With the fierce competition in the online streaming industry, companies are spending money to acquire
+
+subscribers. The strategy of online TV companies is that they’ll attain profit when they have a stable
+
+and loyal user base. Since Hulu's is a "small" player in an ever increasingly competitive streaming
+
+market, its expected to lose even more money before attaining any stability.  Therefore Hulu's key goals
+
+are two fold:  attaining more subsriber base ASAP in order to attain financial stability.
+
+
+--------------------------------------------------------------------------------
+
+\clearpag
+
+3) How HULU accomplish those goals?
+
+From a user experience perspective: Hulu offers an extensive subscription video-on-demand library of
+
+movies, live TV package as well as TV shows. This awesome blend of options is what differentiates Hulu
+
+among other digital bundles like DirecTV and Sling TV, which offer live programming only [6].
+
+For instance, having Emmy award wining shows like Handmaid's Tale was one of their most sucessful effort
+
+in garnering support and attract eyeballs to their site
+
+From a technical perspective:  Hulu uses an enhanced kind of collaborative filtering with features such
+
+as Personalized Masthead, Watchlist and Top Picks [4], see figure below:
+
+![](/Desk top Stuff/CUNY Fall 2019 Folder/Data Acquisition/Project Final/Discussion 11/Figure 1-Hulu Recomendation Products.JPG)
+
+Hulu has also been using Matrix Factorization, such as SVD++[1], PMF[2], Local Low-Rank Matrix
+
+Approximation (LLORMA) [3], etc. with the impressive successes.  
+
+--------------------------------------------------------------------------------
+
+\clearpag
+
+## Reverse Engineering
+
+The Hulu online streaming already has a very solid and structured platform which makes it very difficult
+
+for a novice like myself to reverse engineer; for sure they have smarter engineers than me.
+
+Having said that, there are some noticeable aspects that I noticed their recommending system
+
+is heavy on.  Like most recommenders, it will show you the same kind of content that you've been
+
+watching over and over again, even in its subsections.
+
+That is fine and the norm in this industry but what if a viewer likes variety? And
+
+the viewer like to have more variety/diverse recommendations of contents?   
+
+On a high level, I would reverse engineer this specific portion by inserting an added feature in
+
+conjunction to its content and model filtering algorithms by keeping track of the number and types of
+
+deviations.  When the number of deviations becomes high enough or over a certain threshold level, than
+
+it becomes a habit or an intent on the part of its viewers; movies they are starting to appreciate more.
+
+Like an inflection point into a new trajectory within their trendline.  These deviations will be
+
+added to its similairty list and become part of the recommendations in the subsections going forward.
+
+--------------------------------------------------------------------------------
+
+\clearpag
+
+## Potential Recommendation from Hulu's engineering team
+
+However solid or great their current system is, there is still space for improvement for broader
+
+application in the industry, in terms of both efficiency and accuracy. And in 2016, Hulu's researchers
+
+invented a novel neural network based collaborative filtering approach, called neural
+
+autoregressivedistribution estimator for collaborative filtering (CF-NADE) [5], which is
+
+state-of-the-art on several public benchmarks. This work was accepted and presented in the 2016
+
+International Conference for Machine Learning (ICML 2016).
+
+![](/Desk top Stuff/CUNY Fall 2019 Folder/Data Acquisition/Project Final/Discussion 11/Figure 2-Hulu Recomendation Products.JPG)
+
+CF-NADE has shown to be a successful application of deep learning in recommendation systems, it is the
+
+state-of-the-art with explicit feedback, where users give each item an explicit rating. While in
+
+practice, explicit feedback is rare, but implicit feedback like watch/browse/search/purchase behaviors
+
+are abundant. Adapting CF-NADE to implicit feedback will be the  focus in  Hulu's near future.
+
+
+--------------------------------------------------------------------------------
+
+\clearpag
+
+## Reference
+
+[1] Koren, Yehuda. “Factorization meets the neighborhood: a multifaceted collaborative filtering model.”
+
+Proceedings of the 14th ACM SIGKDD international conference on Knowledge discovery and data mining. ACM,
+
+2008.
+
+[2] Mnih, Andriy and Salakhutdinov, Ruslan. Probabilistic matrix factorization. In Advances in neural
+
+information processing systems, pp. 1257–1264, 2007.
+
+[3] Lee, Joonseok, Kim, Seungyeon, Lebanon, Guy, and Singer, Yoram. Local low-rank matrix approximation.
+
+In Proceedings of The 30th International Conference on Machine Learning, pp. 82–90, 2013.
+
+[4] Salakhutdinov, Ruslan, Mnih, Andriy, and Hinton, Geoffrey. Restricted boltzmann machines for
+
+collaborative filtering. In Proceedings of the 24th international conference on Machine learning, pp.
+
+791–798. ACM, 2007.
+
+[5] Yin Zheng, Bangsheng Tang, Wenkui Ding, Hanning Zhou. A neural autoregressive approach to
+
+collaborative filtering, In Proceedings of the 33th international conference on Machine Learning, NYC,
+
+2016.
+
+[6]  https://muchneeded.com/hulu-statistics/
+
+
+
+```{r}
+getwd()
+```
+

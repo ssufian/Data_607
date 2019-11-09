@@ -210,4 +210,15 @@ weather4 <- weather3 %>%
 head(weather4)
 ```
 
+##  Tidyverse Capability 4
+
+Description:
+
+- Using top_n function to select and order top n entries
+
+```{r}
+weather5 <- weather4 %>% top_n(actual_mean_temp, n= 5)
+
+(weather5)
+```
 

@@ -1,0 +1,242 @@
+---
+title: "Data 607 Week 12 Assignment - NoSQL Migration"
+author: "Sufian"
+date: "11/08/2019"
+output: html_document
+---
+
+## links to RPubs:
+
+http://rpubs.com/ssufian/549294
+
+
+## link to Github:
+
+https://github.com/ssufian/Data_607
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+## Problem Statement
+
+For this assignment, you should take information from a relational database and migrate it to a NoSQL
+
+database of your own choosing. 
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+## Assignment 12 - MYSQL, MongoDB & R 
+
+- For the relational database, I chose MySQL flights database
+
+- For the NoSQL database, I use MongoDB 
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+## Loading libraries
+
+```{r,message=FALSE, warning=FALSE}
+library("DT")
+library(dplyr)
+library(plotrix)
+library(data.table)
+library(RMySQL)
+library(DBI)
+library(rstudioapi)
+require (ggplot2)
+library(DBI)
+```
+
+## Extraction from MySQL Database
+
+```{r,message=FALSE, warning=FALSE}
+# connecting to flights database in MYSQL
+
+# This line do not ask for user and password
+con <- dbConnect(MySQL(), user ="root", password = "Chicke0n", port = 3306, dbname = "flights", host = "localhost")
+
+# This line ask for user name and password
+#con <- dbConnect(MySQL(), user = showPrompt('Username',"Username",default="root"), password = #askForPassword(), port = 3306, dbname = "flights",host = "localhost")
+
+#extract all the tables into their own data frames.from flights database
+
+```
+
+## Converting all database extract to tables
+
+```{r}
+airlines <- dbReadTable(con, "airlines")
+airports <- dbReadTable(con, "airports")
+flights <- dbReadTable(con, "flights")
+planes <- dbReadTable(con, "planes")
+weather <- dbReadTable(con, "weather")
+
+
+```
+
+## Merging tables together
+
+- Data Transformation
+
+- View the all the related flights tables
+
+```{r}
+
+# show the tables retreived from MYSQL
+
+View(airlines)
+
+View(airports)
+
+View(flights)
+
+View(planes)
+
+View(weather)
+```
+
+## Filtering only on early depature and early arrival flights
+
+```{r}
+data <- flights %>% 
+    filter( arr_delay <0 | dep_delay <0) %>% # taking only early arrivals & departures
+    merge(airlines) %>% 
+    rowwise() %>% 
+    mutate(carrier_name = gsub("[\r\n]", "", name))
+# drop the columns with return carriage
+drop <- c('name')
+data1 <- data[,!(names(data) %in% drop)]
+
+head(data1, n=1)    
+    
+```
+
+## Left Join flights to airports
+
+- based only the intersections
+
+```{r}
+drop <- c('faa')
+
+airports1 <- airports %>% mutate(dest = faa)
+
+airports1 <- airports1[,!(names(airports1) %in% drop)]
+
+data2 <- data1 %>% 
+    left_join(airports1)
+```
+
+## Left Join flights to planes & Weather
+
+- based only the intersections
+
+
+```{r}
+data3 <- data2 %>% 
+    inner_join(planes)
+
+data_final <- data3 %>% # Getting only the intersections of all the various tables
+    inner_join(weather)
+
+```
+
+## Load Data into MongoDB
+
+- Load data into a MongoDB.
+
+- Get connection first
+
+## Starting MongoDB server
+
+- Inserting flights database that I had "filtered" to my liking
+
+- Making sure all tables were inserted properly
+
+```{r}
+library(mongolite)
+#start server running before trying code
+#connect to db
+mdb = mongo(collection = "data_final", db = "flights")
+
+mdb$insert(data_final)
+#mdb$remove('{}')
+mdb$count()
+```
+
+```{r}
+
+results <- mdb$find('{}') %>% 
+    group_by(carrier_name, name) %>% 
+    
+    top_n(-10,arr_delay) 
+     
+
+head(results,n=1)
+```
+
+## Database Test Run
+
+- To test out the new database, Let’s say we wanted to know Which airlines has the best arrival time in
+
+the past year of 2013?  
+
+- Note: Here negative values means early arrival and departures; the more negative the values, the 
+
+earlier the flight arrived
+
+```{r}
+
+#bar plot of Total raw ratings
+ggplot(data=results, aes(x=carrier_name, y=arr_delay)) + geom_bar(stat="identity" )+
+    geom_bar(colour="black", fill="#DD8888", width=.8, stat="identity" ) + 
+    guides(fill=FALSE) +
+    xlab("Airlines") + ylab("Early Arrival") + coord_flip()+
+    ggtitle("Airlines with Most Early Cummulative Arrival Occurances")
+
+```
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+Summary Results:
+
+Since we filtered only on early arrivals and early depature flights, you are seeing only the best 
+
+performance airlines in 2013.  
+
+Of the early arrival airlines, United has the most number of cummalative early arrivals followed by 
+
+Alaska and Jet Blue Airways
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+Observation on the differences between traditional SQL and NOSQL:
+
+- The major difference between a NoSQL and relational database is the schemaless architecture. This is
+
+an advantage because it gives a lot of flexibility. It is nice to be able to add or drop data elements
+
+as needs change.
+
+- The main disadvantage is because of its "Anti SQL" nature, it is still very foreign to alot of data
+
+engineers who grew up handling data structures the structured way. There's new syntax to be learn and 
+
+that could be a hinderence for the old school data people.
+
+
+--------------------------------------------------------------------------------
+
+\clearpage
+
+
+

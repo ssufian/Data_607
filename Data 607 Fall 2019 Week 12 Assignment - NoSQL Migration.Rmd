@@ -146,17 +146,43 @@ data_final <- data3 %>% # Getting only the intersections of all the various tabl
 
 ```
 
-## Load Data into MongoDB
+--------------------------------------------------------------------------------
 
-- Load data into a MongoDB.
+\clearpage
 
-- Get connection first
+## Load Data into MongoDB/Get connection first
+
+- Loading data into a MongoDB was difficult for me.  I spent 3 days trouble shooting it but finally it 
+
+worked:  
+
+(1) The key was to get MongoDB installed (whether via cloud based on an on-prem version)
+
+(2) Followed these steps in installing MongoDB on Windows;
+
+https://www.guru99.com/installation-configuration-mongodb.html
 
 ## Starting MongoDB server
+
+(3) Watch the following youtube video;
+
+https://www.youtube.com/watch?v=JBEKJflNV2g.  This video taught me how to complete this project step by
+
+step.  The key was to have MongoDB server installed and running (if you have an on-prem version).  Once
+
+that is done, you can then complete the last step of migrating your curated tables from Mysql to Mongodb
+
+--------------------------------------------------------------------------------
+
+\clearpage
 
 - Inserting flights database that I had "filtered" to my liking
 
 - Making sure all tables were inserted properly
+
+--------------------------------------------------------------------------------
+
+\clearpage
 
 ```{r}
 library(mongolite)
@@ -182,9 +208,9 @@ head(results,n=1)
 
 ## Database Test Run
 
-- To test out the new database, Let’s say we wanted to know Which airlines has the best arrival time in
+- To test out the new database, Let’s say of the early "birds", we wanted to know Which airlines has the
 
-the past year of 2013?  
+best arrival time in the past year of 2013, i.e., the best of the best on-time performers?  
 
 - Note: Here negative values means early arrival and departures; the more negative the values, the 
 
@@ -196,7 +222,7 @@ earlier the flight arrived
 ggplot(data=results, aes(x=carrier_name, y=arr_delay)) + geom_bar(stat="identity" )+
     geom_bar(colour="black", fill="#DD8888", width=.8, stat="identity" ) + 
     guides(fill=FALSE) +
-    xlab("Airlines") + ylab("Early Arrival") + coord_flip()+
+    xlab("Airlines") + ylab("Early Arrival Scores") + coord_flip()+
     ggtitle("Airlines with Most Early Cummulative Arrival Occurances")
 
 ```
@@ -213,7 +239,7 @@ performance airlines in 2013.
 
 Of the early arrival airlines, United has the most number of cummalative early arrivals followed by 
 
-Alaska and Jet Blue Airways
+Alaska Air and Jet Blue Airways
 
 --------------------------------------------------------------------------------
 

@@ -433,7 +433,7 @@ x_fl_wider_5 <- x_fl_Type%>%
 ## Plot of the top 5 provider types in state of Florida
 
 ```{r,fig.width=12, fig.height=7}
-p2 <- ggplot(data=x_fl_wider_5  , aes(x=Provider_Type, y=Freq_Type,fill = Provider_Type)) +ggtitle("Figure 3: Top 10 Florida Provider Types in 2017")+ 
+p2 <- ggplot(data=x_fl_wider_5  , aes(x=Provider_Type, y=Freq_Type,fill = Provider_Type)) +ggtitle("Figure 3: Top 5 Florida Provider Types in 2017")+ 
 geom_bar(stat="identity")+ coord_flip()+theme_economist()
 
 p2
@@ -519,7 +519,7 @@ Classes (Target) : Cardiology,Diagnostic Radiology,Family Practice,Internal Medi
 ```{r}
 #Building a model
 #split data into training and test data sets; 70-30 split
-set.seed(5)
+
 indxTrain <- createDataPartition(x_fl_widerfinal$Provider_Type,p = 0.70,list = FALSE)
 training <- x_fl_widerfinal[indxTrain,]
 testing <- x_fl_widerfinal[-indxTrain,]
@@ -866,9 +866,9 @@ predictors and more importantly to maintain an apples-to-apples comparision betw
  Random Forest
 
 ```{r}
+set.seed(150)
 
-
-indxTrain1 <- createDataPartition(x_onehot4a$Provider_Type,p = 0.70,list = FALSE)
+indxTrain1 <- createDataPartition(x_onehot4a$Provider_Type,p = 0.65,list = FALSE)
 training1 <- x_onehot4a[indxTrain1,]
 testing1 <- x_onehot4a[-indxTrain1,]
 
@@ -974,7 +974,7 @@ match_df1 <- testing3 %>%
   select(NPI, Provider_Type, Predicted,EXCLTYPE ) %>% 
   filter(EXCLTYPE != "NA")
 
-exclusion_check_df <- inner_join(df, match_df1 , by =c("EXCLTYPE",'NPI')) %>% 
+exclusion_check_df <- inner_join(df1, match_df1 , by =c("EXCLTYPE",'NPI')) %>% 
   select(GENERAL,SPECIALTY,NPI,Provider_Type,Predicted,STATE,EXCLTYPE,EXCLDATE,REINDATE)
 
 exclusion_check_df 
@@ -988,7 +988,7 @@ Observation 4a:
 
 - The final output shows that we built a Random Forest classifier that can predict whether physician's
 
-actual provider type is different from its predicted provider type, with an accuracy of approximately 64%.
+actual provider type is different from its predicted provider type, with an accuracy of around 64%.
 
 - Based on this small data set, 2 doctors with NPIs 1023077047 & 1477553840 respectively were found 
 
@@ -1146,18 +1146,21 @@ Random Forest algorithm were then applied to the same 342 predictors and it was 
 
 significantly improved the accuracy of the model; all the F1 scores saw improvements.  
 
-It was clear from the results that Random Forest was the superior of the two algorithms; all the F1 scores
+It was clear from the results that Random Forest was the superior of the two algorithms; all the F1
 
-across the 5 classes improved significantly.
+scores across the 5 classes improved significantly.
 
 Finally, this is where the tool could help; when the predicted classes were matched up against the
 
-Inspector's General exclusion data table, 2 doctors had anomalous predictions vs.its actual provider type.  
-These 2 physicians who are a family practice and cardiologist respectively were both predicted to be
+Inspector's General exclusion data table, 2 doctors had anomalous predictions vs.its actual provider
 
-internal medicine and they were also found to be in the exclusion list.  This meant they both had a
+type.  These 2 physicians who are a family practice and cardiologist respectively were both predicted to
+
+be internal medicine and they were also found to be in the exclusion list.  This meant they both had a
 
 fraudelent past and had been flagged by the State of Florida and this tool confirms that was the case.
+
+## NOTE: Professor Tati, you may get a different prediction provider type when you run this program.  
 
 Areas of Improvement:
 
